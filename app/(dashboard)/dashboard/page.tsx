@@ -1,11 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { customerPortalAction } from "@/lib/payments/actions";
 import { TbCrown } from "react-icons/tb";
 import useSWR from "swr";
@@ -24,7 +19,9 @@ function SubscriptionCard() {
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
             <div className="mb-4 sm:mb-0">
-              <p className="font-medium">Current Plan: {userData?.planName || "Free"}</p>
+              <p className="font-medium">
+                Current Plan: {userData?.planName || "Free"}
+              </p>
               <p className="text-sm text-muted-foreground">
                 {(() => {
                   const status = userData?.subscriptionStatus;
@@ -35,7 +32,10 @@ function SubscriptionCard() {
               </p>
             </div>
             <form action={customerPortalAction}>
-              <Button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white flex items-center gap-2">
+              <Button
+                type="submit"
+                className="bg-orange-500 hover:bg-orange-600 text-white flex items-center gap-2"
+              >
                 <TbCrown className="h-4 w-4 text-white" />
                 Upgrade
               </Button>
