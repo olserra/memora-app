@@ -7,6 +7,12 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Memora - Your Personal Memory Assistant",
   description: "Never forget anything again with Memora.",
+  openGraph: {
+    images: "/metadata-img.png",
+  },
+  twitter: {
+    images: "/metadata-img.png",
+  },
 };
 
 export const viewport: Viewport = {
