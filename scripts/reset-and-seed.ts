@@ -1,8 +1,8 @@
 import dotenv from "dotenv";
-import { db } from "../lib/db/drizzle";
-import { memories, users } from "../lib/db/schema";
 import { eq } from "drizzle-orm";
 import { hashPassword } from "../lib/auth/session";
+import { db } from "../lib/db/drizzle";
+import { memories, users } from "../lib/db/schema";
 
 dotenv.config();
 
@@ -19,12 +19,15 @@ async function run() {
   let user;
   if (userRes.length === 0) {
     const passwordHash = await hashPassword("changeme");
-    const [created] = await db.insert(users).values({
-      name: "Otávio",
-      email,
-      passwordHash,
-      role: "member",
-    }).returning();
+    const [created] = await db
+      .insert(users)
+      .values({
+        name: "Otávio",
+        email,
+        passwordHash,
+        role: "member",
+      })
+      .returning();
     user = created;
     console.log("Created user", email);
   } else {
@@ -36,9 +39,9 @@ async function run() {
     // ensure old team_id column is removed (some DBs may still have it)
     try {
       await db.execute('ALTER TABLE "memories" DROP COLUMN IF EXISTS team_id');
-      console.log('Dropped team_id column from memories (if it existed).');
+      console.log("Dropped team_id column from memories (if it existed).");
     } catch (e) {
-      console.debug('Failed to drop team_id column (non-fatal)', e);
+      console.debug("Failed to drop team_id column (non-fatal)", e);
     }
 
     await db.execute('TRUNCATE TABLE "memories" RESTART IDENTITY CASCADE');
