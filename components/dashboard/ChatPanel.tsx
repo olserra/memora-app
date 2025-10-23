@@ -21,6 +21,7 @@ export default function ChatPanel() {
   const [text, setText] = useState("");
   const [messages, setMessages] = useState<Msg[]>([]);
   const [pending, setPending] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -49,6 +50,20 @@ export default function ChatPanel() {
         body: JSON.stringify({ message: content }),
       });
       const json = await res.json();
+      if (!res.ok) {
+        // surface server-side errors to the user
+        setErrorMsg(json?.error || `Server returned ${res.status}`);
+        const errMsg: Msg = {
+          id: String(Date.now()) + "-e",
+          role: "assistant",
+          text: "(error)",
+          time: now(),
+        };
+        setMessages((m) => [...m, errMsg]);
+        return;
+      }
+
+      setErrorMsg(null);
       const replyText = json.output || json.error || "(no response)";
       const botMsg: Msg = {
         id: String(Date.now()) + "-b",
@@ -123,22 +138,27 @@ export default function ChatPanel() {
             <label htmlFor="chat-input" className="sr-only">
               Message
             </label>
-            <div className="flex gap-3">
-              <textarea
-                id="chat-input"
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                onKeyDown={onKeyDown}
-                placeholder="Write a message... (Enter to send, Shift+Enter for newline)"
-                className="flex-1 min-h-[44px] max-h-48 resize-none rounded-md border px-3 py-2 focus:outline-none focus:ring"
-              />
-              <div className="flex items-end">
-                <Button
-                  onClick={() => void sendMessage()}
-                  disabled={pending || !text.trim()}
-                >
-                  {pending ? "Sending..." : "Send"}
-                </Button>
+            <div className="flex flex-col gap-3">
+              {errorMsg && (
+                <div className="text-sm text-red-600">{errorMsg}</div>
+              )}
+              <div className="flex gap-3">
+                <textarea
+                  id="chat-input"
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  onKeyDown={onKeyDown}
+                  placeholder="Write a message... (Enter to send, Shift+Enter for newline)"
+                  className="flex-1 min-h-[44px] max-h-48 resize-none rounded-md border px-3 py-2 focus:outline-none focus:ring"
+                />
+                <div className="flex items-end">
+                  <Button
+                    onClick={() => void sendMessage()}
+                    disabled={pending || !text.trim()}
+                  >
+                    {pending ? "Sending..." : "Send"}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

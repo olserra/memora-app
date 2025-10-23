@@ -22,7 +22,7 @@ export default function DashboardLayout({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const navItems = [
-    { href: "/dashboard", icon: Users, label: "Team" },
+    { href: "/dashboard", icon: Users, label: "Profile" },
     { href: "/dashboard/chat", icon: MessageSquare, label: "Chat" },
     { href: "/dashboard/general", icon: Settings, label: "General" },
     { href: "/dashboard/activity", icon: Activity, label: "Activity" },
