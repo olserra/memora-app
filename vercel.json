@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "build": {
+    "env": {},
+    "outputDirectory": ".next"
+  },
+  "framework": {
+    "name": "nextjs"
+  }
+}
