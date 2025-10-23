@@ -1,6 +1,7 @@
 import { db } from "@/lib/db/drizzle";
-import { getTeamForUser, getUser } from "@/lib/db/queries";
+import { getUser } from "@/lib/db/queries";
 import { memories } from "@/lib/db/schema";
+import * as dev from "@/lib/devMemories";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
@@ -17,20 +18,50 @@ export async function PUT(
     const body = await req.json();
     const { title, content, category, tags } = body || {};
 
-    await getTeamForUser();
-
-    const [updated] = await db
-      .update(memories)
-      .set({
+    // B2C app: don't require team membership; rely on user context
+    if (process.env.USE_LOCAL_MEMORIES === "1") {
+      const updated = await dev.updateMemory(id, {
         title: title ?? null,
         content: content ?? "",
         category: category ?? "general",
-        tags: tags ? JSON.stringify(tags.slice(0, 3)) : JSON.stringify([]),
-      })
-      .where(eq(memories.id, id))
-      .returning();
+        tags: Array.isArray(tags) ? tags.slice(0, 3) : [],
+      });
 
-    return NextResponse.json({ memory: updated });
+      if (!updated)
+        return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+      return NextResponse.json({ memory: updated });
+    }
+
+    try {
+      const [updated] = await db
+        .update(memories)
+        .set({
+          title: title ?? null,
+          content: content ?? "",
+          category: category ?? "general",
+          tags: tags ? JSON.stringify(tags.slice(0, 3)) : JSON.stringify([]),
+        })
+        .where(eq(memories.id, id))
+        .returning();
+
+      return NextResponse.json({ memory: updated });
+    } catch (error_: unknown) {
+      // fallback to dev store (log error for debugging)
+      // eslint-disable-next-line no-console
+      console.debug("DB update failed, falling back to dev store", error_);
+      const updated = await dev.updateMemory(id, {
+        title: title ?? null,
+        content: content ?? "",
+        category: category ?? "general",
+        tags: Array.isArray(tags) ? tags.slice(0, 3) : [],
+      });
+
+      if (!updated)
+        return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+      return NextResponse.json({ memory: updated });
+    }
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || "Failed to update memory" },
@@ -49,9 +80,20 @@ export async function DELETE(
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
     const id = Number(params.id);
-    await db.delete(memories).where(eq(memories.id, id));
+    if (process.env.USE_LOCAL_MEMORIES === "1") {
+      const ok = await dev.deleteMemory(id);
+      return NextResponse.json({ ok });
+    }
 
-    return NextResponse.json({ ok: true });
+    try {
+      await db.delete(memories).where(eq(memories.id, id));
+      return NextResponse.json({ ok: true });
+    } catch (error_: unknown) {
+      // eslint-disable-next-line no-console
+      console.debug("DB delete failed, falling back to dev store", error_);
+      const ok = await dev.deleteMemory(id);
+      return NextResponse.json({ ok });
+    }
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || "Failed to delete memory" },

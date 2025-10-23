@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import { eq } from "drizzle-orm";
 import { hashPassword } from "../lib/auth/session";
 import { db } from "../lib/db/drizzle";
-import { memories, teamMembers, teams, users } from "../lib/db/schema";
+import { memories, users } from "../lib/db/schema";
 
 dotenv.config();
 
@@ -32,26 +32,7 @@ async function seed() {
     user = userRes[0];
   }
 
-  // find or create a team for the user
-  const tm = await db
-    .select()
-    .from(teamMembers)
-    .where(eq(teamMembers.userId, user.id))
-    .limit(1);
-  let teamId;
-  if (tm.length === 0) {
-    console.log("Creating team for user");
-    const [team] = await db
-      .insert(teams)
-      .values({ name: "Personal" })
-      .returning();
-    teamId = team.id;
-    await db
-      .insert(teamMembers)
-      .values({ teamId, userId: user.id, role: "owner" });
-  } else {
-    teamId = tm[0].teamId;
-  }
+  // B2C: do not create teams. All memories will be user-scoped.
 
   const raw = `Is considering upgrading their AI knowledge and is evaluating different learning paths, including high-level technical courses at MIT, an MBA in Brazil, and free online content from platforms like DeepLearning.ai and Stanford. User has hands-on experience with projects like xmem but finds some complexity challenging. They are exploring the best learning methods and the right level of technical depth needed in AI.
 
@@ -123,7 +104,6 @@ Sugere, para tal finalidade, colocar numa vector db ou no postgres?
   for (const p of parts) {
     const title = p.split("\n")[0].slice(0, 200);
     await db.insert(memories).values({
-      teamId,
       userId: user.id,
       title,
       content: p,

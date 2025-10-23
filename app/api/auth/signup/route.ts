@@ -1,14 +1,14 @@
 import { hashPassword, setSession } from "@/lib/auth/session";
 import { db } from "@/lib/db/drizzle";
-import { invitations, teamMembers, teams, users } from "@/lib/db/schema";
-import { and, eq } from "drizzle-orm";
+import { users } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   const form = await req.formData();
   const email = String(form.get("email") || "");
   const password = String(form.get("password") || "");
-  const inviteId = String(form.get("inviteId") || "");
+  // inviteId ignored in B2C migration
 
   const existing = await db
     .select()
@@ -35,41 +35,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let teamId: number | undefined;
-
-  if (inviteId && /^\d+$/.test(inviteId)) {
-    const [invitation] = await db
-      .select()
-      .from(invitations)
-      .where(
-        and(
-          eq(invitations.id, Number.parseInt(inviteId)),
-          eq(invitations.email, email),
-          eq(invitations.status, "pending")
-        )
-      )
-      .limit(1);
-
-    if (invitation) {
-      teamId = invitation.teamId;
-      await db
-        .update(invitations)
-        .set({ status: "accepted" })
-        .where(eq(invitations.id, invitation.id));
-    }
-  }
-
-  if (!teamId) {
-    const [createdTeam] = await db
-      .insert(teams)
-      .values({ name: `${email}'s Team` })
-      .returning();
-    teamId = createdTeam?.id;
-  }
-
-  await db
-    .insert(teamMembers)
-    .values({ userId: createdUser.id, teamId: teamId!, role: "owner" });
+  // B2C: do not create teams or invitations; just create user and session.
   await setSession(createdUser);
 
   return NextResponse.json({ ok: true });

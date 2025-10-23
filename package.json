@@ -7,9 +7,12 @@
     "start": "next start",
     "db:setup": "npx tsx lib/db/setup.ts",
     "db:seed": "npx tsx lib/db/seed.ts",
+  "db:reset-seed": "npx tsx scripts/reset-and-seed.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "dev:seed": "npx tsx scripts/dev-seed.ts",
+    "dev:mem-test": "npx tsx scripts/dev-memories-test.ts"
   },
   "dependencies": {
     "@tailwindcss/postcss": "4.1.7",

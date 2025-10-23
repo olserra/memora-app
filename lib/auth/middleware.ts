@@ -1,7 +1,6 @@
-import { z } from 'zod';
-import { TeamDataWithMembers, User } from '@/lib/db/schema';
-import { getTeamForUser, getUser } from '@/lib/db/queries';
-import { redirect } from 'next/navigation';
+import { getUser } from "@/lib/db/queries";
+import { User } from "@/lib/db/schema";
+import { z } from "zod";
 
 export type ActionState = {
   error?: string;
@@ -41,7 +40,7 @@ export function validatedActionWithUser<S extends z.ZodType<any, any>, T>(
   return async (prevState: ActionState, formData: FormData) => {
     const user = await getUser();
     if (!user) {
-      throw new Error('User is not authenticated');
+      throw new Error("User is not authenticated");
     }
 
     const result = schema.safeParse(Object.fromEntries(formData));
@@ -53,23 +52,12 @@ export function validatedActionWithUser<S extends z.ZodType<any, any>, T>(
   };
 }
 
-type ActionWithTeamFunction<T> = (
-  formData: FormData,
-  team: TeamDataWithMembers
-) => Promise<T>;
-
-export function withTeam<T>(action: ActionWithTeamFunction<T>) {
-  return async (formData: FormData): Promise<T> => {
-    const user = await getUser();
-    if (!user) {
-      redirect('/sign-in');
-    }
-
-    const team = await getTeamForUser();
-    if (!team) {
-      throw new Error('Team not found');
-    }
-
-    return action(formData, team);
+// Team helpers removed in B2C refactor. If you need team info later, re-implement
+// with a user-scoped approach.
+export function withTeam<T>(
+  _action: (formData: FormData, team: unknown) => Promise<T>
+) {
+  return async () => {
+    throw new Error("Team-based actions are disabled in B2C migration");
   };
 }
