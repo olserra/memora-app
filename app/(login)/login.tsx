@@ -248,7 +248,7 @@ export function Login({ mode = "signin" }: { mode?: "signin" | "signup" }) {
                 ? "Create an account"
                 : "Sign in to existing account"}
             </Link>
-            <GoogleSignInButton />
+            {/* <GoogleSignInButton /> */}
           </div>
         </div>
       </div>
