@@ -8,8 +8,9 @@ import { CircleIcon, Loader2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useActionState, useEffect, useState } from "react";
-import { signIn, signUp } from "./actions";
+import { useEffect, useState } from "react";
+// We'll call API routes for sign-in / sign-up instead of the server actions
+// because the project was importing a non-existent `useActionState` hook.
 
 function EmailField({ defaultValue }: { defaultValue?: string }) {
   return (
@@ -133,10 +134,8 @@ export function Login({ mode = "signin" }: { mode?: "signin" | "signup" }) {
   const priceId = searchParams.get("priceId");
   const inviteId = searchParams.get("inviteId");
   const [viewMode, setViewMode] = useState<"signin" | "signup">(mode);
-  const [state, formAction, pending] = useActionState<ActionState, FormData>(
-    viewMode === "signin" ? signIn : signUp,
-    { error: "" }
-  );
+  const [state, setState] = useState<ActionState | null>(null);
+  const [pending, setPending] = useState(false);
   const [password, setPassword] = useState("");
 
   // Switch to sign-in view if email is already registered
@@ -149,6 +148,32 @@ export function Login({ mode = "signin" }: { mode?: "signin" | "signup" }) {
       setViewMode("signin");
     }
   }, [state?.error, viewMode]);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setPending(true);
+    setState(null);
+
+    const form = new FormData(e.currentTarget);
+    const endpoint =
+      viewMode === "signin" ? "/api/auth/login" : "/api/auth/signup";
+
+    try {
+      const res = await fetch(endpoint, { method: "POST", body: form });
+      const json = await res.json();
+      if (!res.ok) {
+        setState({ error: json.error || "An error occurred" });
+        setPending(false);
+        return;
+      }
+
+      // On success, redirect to dashboard
+      window.location.href = "/dashboard";
+    } catch (err) {
+      setState({ error: "Network error" });
+      setPending(false);
+    }
+  }
 
   return (
     <div className="min-h-[100dvh] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
@@ -164,11 +189,11 @@ export function Login({ mode = "signin" }: { mode?: "signin" | "signup" }) {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <form className="space-y-6" action={formAction}>
+        <form className="space-y-6" onSubmit={handleSubmit}>
           <input type="hidden" name="redirect" value={redirect || ""} />
           <input type="hidden" name="priceId" value={priceId || ""} />
           <input type="hidden" name="inviteId" value={inviteId || ""} />
-          <EmailField defaultValue={state.email} />
+          <EmailField defaultValue={state?.email} />
           <PasswordField
             password={password}
             setPassword={setPassword}
