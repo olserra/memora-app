@@ -64,6 +64,8 @@ export const memories = pgTable("memories", {
     .references(() => users.id),
   title: varchar("title", { length: 255 }),
   content: text("content").notNull(),
+  // JSON-encoded array of tags (simple approach to avoid PG-specific types in schema)
+  tags: text("tags"),
   category: varchar("category", { length: 100 }).notNull().default("general"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

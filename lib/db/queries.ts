@@ -24,11 +24,15 @@ export async function getMemoriesGrouped() {
     .where(eq(memories.teamId, teamId))
     .orderBy(desc(memories.createdAt));
 
-  const grouped: Record<string, typeof rows> = {};
+  const grouped: Record<string, any[]> = {};
   for (const r of rows) {
     const cat = r.category || "general";
+    const item = {
+      ...r,
+      tags: r.tags ? JSON.parse(r.tags as unknown as string) : [],
+    };
     if (!grouped[cat]) grouped[cat] = [];
-    grouped[cat].push(r);
+    grouped[cat].push(item);
   }
 
   return grouped;

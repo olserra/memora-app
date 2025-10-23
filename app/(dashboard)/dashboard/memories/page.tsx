@@ -1,7 +1,7 @@
-import MemoriesPanel from '@/components/dashboard/MemoriesPanel';
+import MemoriesPanel from "@/components/dashboard/MemoriesPanel";
 
 export const metadata = {
-  title: 'Memories',
+  title: "Memories",
 };
 
 export default function Page() {
