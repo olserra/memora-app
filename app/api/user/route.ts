@@ -1,4 +1,4 @@
-import { getUser, getTeamForUser } from '@/lib/db/queries';
+import { getTeamForUser, getUser } from "@/lib/db/queries";
 
 export async function GET() {
   const user = await getUser();
