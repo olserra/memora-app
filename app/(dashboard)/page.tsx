@@ -126,22 +126,26 @@ export default function HomePage() {
           <div className="lg:grid lg:grid-cols-2 lg:gap-8 lg:items-center">
             <div>
               <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-                Ready to launch your SaaS?
+                Build a smarter memory for your users
               </h2>
               <p className="mt-3 max-w-3xl text-lg text-gray-500">
-                Our template provides everything you need to get your SaaS up
-                and running quickly. Don't waste time on boilerplate - focus on
-                what makes your product unique.
+                Deliver an instant, privacy-first memory assistant that lives in
+                WhatsApp. Skip the boilerplate and ship features that make your
+                product indispensable to customers.
               </p>
             </div>
             <div className="mt-8 lg:mt-0 flex justify-center lg:justify-end">
-              <a href="https://github.com/nextjs/saas-starter" target="_blank">
+              <a
+                href="https://wa.me/351914127195"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <Button
                   size="lg"
                   variant="outline"
                   className="text-lg rounded-full"
                 >
-                  View the code
+                  Contact Us
                   <ArrowRight className="ml-3 h-6 w-6" />
                 </Button>
               </a>
