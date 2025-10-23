@@ -9,7 +9,8 @@ import { randomBytes } from "node:crypto";
 // key. Prefer `NEXTAUTH_SECRET` if present (common convention). Auto-generate
 // a temporary secret in development to make local work easier (sessions won't
 // persist across restarts when auto-generated).
-const rawAuthSecret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET ?? "";
+const rawAuthSecret =
+  process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET ?? "";
 let authSecretToUse = rawAuthSecret;
 if (!rawAuthSecret) {
   if (process.env.NODE_ENV === "production") {
