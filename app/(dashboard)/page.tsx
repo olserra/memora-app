@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function HomePage() {
   return (
@@ -20,19 +21,16 @@ export default function HomePage() {
                 WhatsApp.
               </p>
               <div className="mt-8 sm:max-w-lg sm:mx-auto sm:text-center lg:text-left lg:mx-0">
-                <a
-                  href="https://vercel.com/templates/next.js/next-js-saas-starter"
-                  target="_blank"
-                >
+                <Link href="/sign-in">
                   <Button
                     size="lg"
                     variant="outline"
                     className="text-lg rounded-full"
                   >
-                    Deploy your own
+                    Get started
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
-                </a>
+                </Link>
               </div>
             </div>
             <div className="mt-12 relative sm:max-w-lg sm:mx-auto lg:mt-0 lg:max-w-none lg:mx-0 lg:col-span-6 lg:flex lg:items-center justify-center">
@@ -126,29 +124,26 @@ export default function HomePage() {
           <div className="lg:grid lg:grid-cols-2 lg:gap-8 lg:items-center">
             <div>
               <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-                Build a smarter memory for your users
+                You personal assistant on WhatsApp
               </h2>
               <p className="mt-3 max-w-3xl text-lg text-gray-500">
-                Deliver an instant, privacy-first memory assistant that lives in
-                WhatsApp. Skip the boilerplate and ship features that make your
-                product indispensable to customers.
+                Bring a privacy-first memory assistant to everyday tasks.
+                Capture text, voice, and calls, preserve full conversation
+                context, and deliver fast private recall that becomes
+                indispensable.
               </p>
             </div>
             <div className="mt-8 lg:mt-0 flex justify-center lg:justify-end">
-              <a
-                href="https://wa.me/351914127195"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <Link href="/sign-in">
                 <Button
                   size="lg"
                   variant="outline"
                   className="text-lg rounded-full"
                 >
-                  Contact Us
+                  Get started
                   <ArrowRight className="ml-3 h-6 w-6" />
                 </Button>
-              </a>
+              </Link>
             </div>
           </div>
         </div>
