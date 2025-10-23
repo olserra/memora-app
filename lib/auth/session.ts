@@ -6,10 +6,10 @@ import { randomBytes } from "node:crypto";
 
 // Ensure we have a non-empty secret to sign tokens with. jose (used by SignJWT)
 // will throw a "Zero-length key is not supported" error when given an empty
-// key. Provide a helpful error in production and auto-generate a temporary
-// secret in development to make local work easier (sessions won't persist
-// across restarts when auto-generated).
-const rawAuthSecret = process.env.AUTH_SECRET ?? "";
+// key. Prefer `NEXTAUTH_SECRET` if present (common convention). Auto-generate
+// a temporary secret in development to make local work easier (sessions won't
+// persist across restarts when auto-generated).
+const rawAuthSecret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET ?? "";
 let authSecretToUse = rawAuthSecret;
 if (!rawAuthSecret) {
   if (process.env.NODE_ENV === "production") {

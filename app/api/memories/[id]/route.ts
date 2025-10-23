@@ -3,12 +3,9 @@ import { getUser } from "@/lib/db/queries";
 import { memories } from "@/lib/db/schema";
 import * as dev from "@/lib/devMemories";
 import { eq } from "drizzle-orm";
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 
-export async function PUT(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(req: NextRequest, { params }: any) {
   try {
     const user = await getUser();
     if (!user)
@@ -70,10 +67,7 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  _req: Request,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(_req: NextRequest, { params }: any) {
   try {
     const user = await getUser();
     if (!user)
