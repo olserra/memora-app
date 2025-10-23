@@ -1,22 +1,57 @@
-import dotenv from 'dotenv';
-import { db } from '../lib/db/drizzle';
-import { users, memories, teamMembers } from '../lib/db/schema';
-import { eq } from 'drizzle-orm';
+import dotenv from "dotenv";
+import { eq } from "drizzle-orm";
+import { hashPassword } from "../lib/auth/session";
+import { db } from "../lib/db/drizzle";
+import { memories, teamMembers, teams, users } from "../lib/db/schema";
 
 dotenv.config();
 
 async function seed() {
-  const email = 'olserra@gmail.com';
+  const email = "olserra@gmail.com";
 
-  const userRes = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  let userRes = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
+  let user;
   if (userRes.length === 0) {
-    console.error('User with email', email, 'not found. Please create user first.');
-    process.exit(1);
+    console.log("User not found, creating user", email);
+    const passwordHash = await hashPassword("changeme");
+    const [created] = await db
+      .insert(users)
+      .values({
+        name: "Otávio",
+        email,
+        passwordHash,
+        role: "member",
+      })
+      .returning();
+    user = created;
+  } else {
+    user = userRes[0];
   }
-  const user = userRes[0];
 
-  const teamRes = await db.select().from(teamMembers).where(eq(teamMembers.userId, user.id)).limit(1);
-  const teamId = teamRes.length > 0 ? teamRes[0].teamId : 1;
+  // find or create a team for the user
+  const tm = await db
+    .select()
+    .from(teamMembers)
+    .where(eq(teamMembers.userId, user.id))
+    .limit(1);
+  let teamId;
+  if (tm.length === 0) {
+    console.log("Creating team for user");
+    const [team] = await db
+      .insert(teams)
+      .values({ name: "Personal" })
+      .returning();
+    teamId = team.id;
+    await db
+      .insert(teamMembers)
+      .values({ teamId, userId: user.id, role: "owner" });
+  } else {
+    teamId = tm[0].teamId;
+  }
 
   const raw = `Is considering upgrading their AI knowledge and is evaluating different learning paths, including high-level technical courses at MIT, an MBA in Brazil, and free online content from platforms like DeepLearning.ai and Stanford. User has hands-on experience with projects like xmem but finds some complexity challenging. They are exploring the best learning methods and the right level of technical depth needed in AI.
 
@@ -80,10 +115,13 @@ Coloque-as separadamente, conforme a quebra de linha.
 Sugere, para tal finalidade, colocar numa vector db ou no postgres?
 `;
 
-  const parts = raw.split('\n\n').map(p => p.trim()).filter(Boolean);
+  const parts = raw
+    .split("\n\n")
+    .map((p) => p.trim())
+    .filter(Boolean);
 
   for (const p of parts) {
-    const title = p.split('\n')[0].slice(0, 200);
+    const title = p.split("\n")[0].slice(0, 200);
     await db.insert(memories).values({
       teamId,
       userId: user.id,
@@ -93,7 +131,10 @@ Sugere, para tal finalidade, colocar numa vector db ou no postgres?
     });
   }
 
-  console.log('Seeded', parts.length, 'memories for', email);
+  console.log("Seeded", parts.length, "memories for", email);
 }
 
-seed().catch(e => { console.error(e); process.exit(1); });
+seed().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Search, Plus } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import useSWR from "swr";
 import MemoryEditor from "./MemoryEditor";
@@ -68,9 +68,15 @@ export default function MemoriesPanel() {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold">Memories</h2>
         <div className="flex items-center gap-3">
-            <Button variant="ghost" onClick={() => { setEditing(null); setEditorOpen(true); }}>
-              <Plus className="mr-2 h-4 w-4" /> New Memory
-            </Button>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setEditing(null);
+              setEditorOpen(true);
+            }}
+          >
+            <Plus className="mr-2 h-4 w-4" /> New Memory
+          </Button>
           <div className="flex items-center border rounded-md px-3 py-1 gap-2 bg-white">
             <Search className="w-4 h-4 text-gray-500" />
             <input
@@ -159,7 +165,14 @@ export default function MemoriesPanel() {
                       ))}
                     </div>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="ghost" onClick={() => { setEditing(m); setEditorOpen(true); }}>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setEditing(m);
+                          setEditorOpen(true);
+                        }}
+                      >
                         Open
                       </Button>
                     </div>
@@ -186,11 +199,18 @@ export default function MemoriesPanel() {
                       ))}
                     </div>
                   </div>
-                    <div className="ml-4">
-                      <Button size="sm" variant="ghost" onClick={() => { setEditing(m); setEditorOpen(true); }}>
-                        Open
-                      </Button>
-                    </div>
+                  <div className="ml-4">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setEditing(m);
+                        setEditorOpen(true);
+                      }}
+                    >
+                      Open
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}

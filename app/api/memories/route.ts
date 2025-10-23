@@ -1,5 +1,5 @@
-import { getMemoriesGrouped, getUser, getTeamForUser } from "@/lib/db/queries";
 import { db } from "@/lib/db/drizzle";
+import { getMemoriesGrouped, getTeamForUser, getUser } from "@/lib/db/queries";
 import { memories } from "@/lib/db/schema";
 import { NextResponse } from "next/server";
 
@@ -27,7 +27,8 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const user = await getUser();
-    if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    if (!user)
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
     const body = await req.json();
     const { title, content, category, tags } = body || {};
@@ -35,17 +36,23 @@ export async function POST(req: Request) {
     const team = await getTeamForUser();
     const teamId = team?.id || 1;
 
-    const [row] = await db.insert(memories).values({
-      teamId,
-      userId: user.id,
-      title: title || null,
-      content: content || "",
-      category: category || "general",
-      tags: tags ? JSON.stringify(tags.slice(0, 3)) : JSON.stringify([]),
-    }).returning();
+    const [row] = await db
+      .insert(memories)
+      .values({
+        teamId,
+        userId: user.id,
+        title: title || null,
+        content: content || "",
+        category: category || "general",
+        tags: tags ? JSON.stringify(tags.slice(0, 3)) : JSON.stringify([]),
+      })
+      .returning();
 
     return NextResponse.json({ memory: row });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to create memory" }, { status: 500 });
+    return NextResponse.json(
+      { error: err.message || "Failed to create memory" },
+      { status: 500 }
+    );
   }
 }

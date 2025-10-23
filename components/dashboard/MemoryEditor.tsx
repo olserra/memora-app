@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
 
 type Props = {
   readonly memory?: any;
@@ -73,19 +73,42 @@ export default function MemoryEditor({ memory, onClose, onSaved }: Props) {
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
-        <h3 className="text-lg font-semibold mb-4">{memory ? "Edit Memory" : "Create Memory"}</h3>
+        <h3 className="text-lg font-semibold mb-4">
+          {memory ? "Edit Memory" : "Create Memory"}
+        </h3>
         <div className="space-y-3">
-          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" className="w-full rounded border px-3 py-2" />
-          <textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder="Content" className="w-full rounded border px-3 py-2 min-h-[120px]" />
-          <input value={tagsStr} onChange={(e) => setTagsStr(e.target.value)} placeholder="Tags (comma separated, max 3)" className="w-full rounded border px-3 py-2" />
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Title"
+            className="w-full rounded border px-3 py-2"
+          />
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Content"
+            className="w-full rounded border px-3 py-2 min-h-[120px]"
+          />
+          <input
+            value={tagsStr}
+            onChange={(e) => setTagsStr(e.target.value)}
+            placeholder="Tags (comma separated, max 3)"
+            className="w-full rounded border px-3 py-2"
+          />
         </div>
 
         <div className="mt-4 flex justify-end gap-2">
           {memory && (
-            <Button variant="ghost" onClick={remove} disabled={saving}>Delete</Button>
+            <Button variant="ghost" onClick={remove} disabled={saving}>
+              Delete
+            </Button>
           )}
-          <Button variant="ghost" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button onClick={save} disabled={saving}>{saving ? 'Saving...' : 'Save'}</Button>
+          <Button variant="ghost" onClick={onClose} disabled={saving}>
+            Cancel
+          </Button>
+          <Button onClick={save} disabled={saving}>
+            {saving ? "Saving..." : "Save"}
+          </Button>
         </div>
       </div>
     </div>
