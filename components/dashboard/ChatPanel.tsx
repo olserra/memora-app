@@ -1,78 +1,146 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+type Msg = {
+  id: string;
+  role: "user" | "assistant";
+  text: string;
+  time?: string;
+};
+
+function now() {
+  return new Date().toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 export default function ChatPanel() {
-  const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<
-    Array<{ role: string; text: string }>
-  >([]);
+  const [text, setText] = useState("");
+  const [messages, setMessages] = useState<Msg[]>([]);
   const [pending, setPending] = useState(false);
+  const listRef = useRef<HTMLDivElement | null>(null);
 
-  async function send() {
-    if (!input) return;
-    const userMsg = input;
-    setMessages((m) => [...m, { role: "user", text: userMsg }]);
-    setInput("");
+  useEffect(() => {
+    // auto-scroll to bottom on new messages
+    const el = listRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [messages]);
+
+  async function sendMessage() {
+    const content = text.trim();
+    if (!content) return;
+    const userMsg: Msg = {
+      id: String(Date.now()) + "-u",
+      role: "user",
+      text: content,
+      time: now(),
+    };
+    setMessages((m) => [...m, userMsg]);
+    setText("");
     setPending(true);
 
     try {
       const res = await fetch("/api/llm/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMsg }),
+        body: JSON.stringify({ message: content }),
       });
       const json = await res.json();
-      const reply = json.output || json.error || "(no response)";
-      setMessages((m) => [...m, { role: "assistant", text: reply }]);
+      const replyText = json.output || json.error || "(no response)";
+      const botMsg: Msg = {
+        id: String(Date.now()) + "-b",
+        role: "assistant",
+        text: replyText,
+        time: now(),
+      };
+      setMessages((m) => [...m, botMsg]);
     } catch (err) {
-      setMessages((m) => [...m, { role: "assistant", text: "Chat error" }]);
+      // log the error for diagnostics and show a friendly message
+      // eslint-disable-next-line no-console
+      console.error("chat send error:", err);
+      const errMsg: Msg = {
+        id: String(Date.now()) + "-e",
+        role: "assistant",
+        text: "Chat error",
+        time: now(),
+      };
+      setMessages((m) => [...m, errMsg]);
     } finally {
       setPending(false);
     }
   }
 
+  function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      void sendMessage();
+    }
+  }
+
   return (
-    <Card className="max-w-3xl mx-auto mt-8">
+    <Card className="max-w-3xl mx-auto mt-8 h-[600px] flex flex-col">
       <CardHeader>
-        <CardTitle>Chat with your data</CardTitle>
+        <CardTitle>Chat</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div className="max-h-64 overflow-y-auto border rounded p-3 bg-white">
+      <CardContent className="flex-1 flex flex-col p-0">
+        <div className="flex-1 overflow-hidden flex flex-col">
+          <div
+            ref={listRef}
+            className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50"
+          >
             {messages.length === 0 && (
               <div className="text-sm text-muted-foreground">
                 Ask something about your memories.
               </div>
             )}
-            {messages.map((m, i) => (
+            {messages.map((m) => (
               <div
-                key={i}
-                className={`mb-2 ${
-                  m.role === "user" ? "text-right" : "text-left"
+                key={m.id}
+                className={`flex ${
+                  m.role === "user" ? "justify-end" : "justify-start"
                 }`}
               >
                 <div
-                  className={`inline-block px-3 py-1 rounded ${
-                    m.role === "user" ? "bg-orange-100" : "bg-gray-100"
+                  className={`max-w-[80%] p-3 rounded-lg break-words ${
+                    m.role === "user"
+                      ? "bg-blue-600 text-white"
+                      : "bg-white border"
                   }`}
                 >
-                  {m.text}
+                  <div className="whitespace-pre-wrap">{m.text}</div>
+                  <div className="text-xs text-muted-foreground mt-1 text-right">
+                    {m.time}
+                  </div>
                 </div>
               </div>
             ))}
           </div>
-          <div className="flex gap-2">
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask something..."
-            />
-            <Button onClick={send} disabled={pending || !input}>
-              Send
-            </Button>
+
+          <div className="border-t p-4 bg-white">
+            <label htmlFor="chat-input" className="sr-only">
+              Message
+            </label>
+            <div className="flex gap-3">
+              <textarea
+                id="chat-input"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={onKeyDown}
+                placeholder="Write a message... (Enter to send, Shift+Enter for newline)"
+                className="flex-1 min-h-[44px] max-h-48 resize-none rounded-md border px-3 py-2 focus:outline-none focus:ring"
+              />
+              <div className="flex items-end">
+                <Button
+                  onClick={() => void sendMessage()}
+                  disabled={pending || !text.trim()}
+                >
+                  {pending ? "Sending..." : "Send"}
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </CardContent>

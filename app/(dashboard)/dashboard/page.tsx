@@ -1,6 +1,4 @@
 "use client";
-
-import ChatPanel from "@/components/dashboard/ChatPanel";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -211,7 +209,6 @@ function InviteTeamMember() {
 }
 
 export default function SettingsPage() {
-  const { data: user } = useSWR<User>("/api/user", fetcher);
   return (
     <section className="flex-1 p-4 lg:p-8">
       <h1 className="text-lg lg:text-2xl font-medium mb-6">Team Settings</h1>
@@ -224,11 +221,7 @@ export default function SettingsPage() {
       <Suspense fallback={<InviteTeamMemberSkeleton />}>
         <InviteTeamMember />
       </Suspense>
-      {user ? (
-        <div className="mt-6">
-          <ChatPanel />
-        </div>
-      ) : null}
+      {/* Chat moved to its own page at /dashboard/chat */}
     </section>
   );
 }

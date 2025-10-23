@@ -11,19 +11,48 @@ export async function POST(req: NextRequest) {
     const llmKey = process.env.LLM_API_KEY;
 
     if (llmUrl) {
-      // Proxy to external Llama-like endpoint if configured
+      // Proxy to an external Llama-like endpoint if configured.
+      // Many self-hosted LLaMA UIs (text-generation-webui, ollama, llama.cpp wrappers)
+      // expose a simple HTTP endpoint you can POST to without an API key.
+      // Configure LLM_API_URL to point to that endpoint (e.g. http://localhost:8080/api/generate)
       const res = await fetch(llmUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          // Only send Authorization header if a key is provided
           ...(llmKey ? { Authorization: `Bearer ${llmKey}` } : {}),
         },
-        body: JSON.stringify({ input: message }),
+        // Some servers use { input } whereas others expect { prompt } or { prompt: { text } }.
+        // Send a generic payload and let the remote handle it.
+        body: JSON.stringify({
+          input: message,
+          prompt: message,
+          text: message,
+        }),
       });
 
-      const json = await res.json();
-      // Expect the remote to reply with { output: string } or similar
-      const output = json.output || json.text || JSON.stringify(json);
+      // Try to parse and normalize common shapes from LLM servers.
+      let json;
+      try {
+        json = await res.json();
+      } catch (err) {
+        // Not JSON (some endpoints stream plain text). Fall back to text.
+        const txt = await res.text();
+        return NextResponse.json({ output: txt });
+      }
+
+      // Common response shapes:
+      // { output: '...' }
+      // { text: '...' }
+      // { results: [{ output: '...' }]} or { generations: [{ text: '...' }] }
+      const output =
+        json.output ||
+        json.text ||
+        json.results?.[0]?.output ||
+        json.results?.[0]?.text ||
+        json.generations?.[0]?.text ||
+        JSON.stringify(json);
+
       return NextResponse.json({ output });
     }
 
