@@ -1,9 +1,32 @@
-import { compare, hash } from 'bcryptjs';
-import { SignJWT, jwtVerify } from 'jose';
-import { cookies } from 'next/headers';
-import { NewUser } from '@/lib/db/schema';
+import { NewUser } from "@/lib/db/schema";
+import { compare, hash } from "bcryptjs";
+import { SignJWT, jwtVerify } from "jose";
+import { cookies } from "next/headers";
+import { randomBytes } from "node:crypto";
 
-const key = new TextEncoder().encode(process.env.AUTH_SECRET);
+// Ensure we have a non-empty secret to sign tokens with. jose (used by SignJWT)
+// will throw a "Zero-length key is not supported" error when given an empty
+// key. Provide a helpful error in production and auto-generate a temporary
+// secret in development to make local work easier (sessions won't persist
+// across restarts when auto-generated).
+const rawAuthSecret = process.env.AUTH_SECRET ?? "";
+let authSecretToUse = rawAuthSecret;
+if (!rawAuthSecret) {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "AUTH_SECRET environment variable is required in production to sign session tokens"
+    );
+  } else {
+    // Dev fallback: generate a random 32-byte hex secret
+    authSecretToUse = randomBytes(32).toString("hex");
+    // eslint-disable-next-line no-console
+    console.warn(
+      "Warning: AUTH_SECRET is not set. Using an auto-generated secret for development. Set AUTH_SECRET in your .env to persist sessions across restarts."
+    );
+  }
+}
+
+const key = new TextEncoder().encode(authSecretToUse);
 const SALT_ROUNDS = 10;
 
 export async function hashPassword(password: string) {
@@ -24,21 +47,21 @@ type SessionData = {
 
 export async function signToken(payload: SessionData) {
   return await new SignJWT(payload)
-    .setProtectedHeader({ alg: 'HS256' })
+    .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime('1 day from now')
+    .setExpirationTime("1 day from now")
     .sign(key);
 }
 
 export async function verifyToken(input: string) {
   const { payload } = await jwtVerify(input, key, {
-    algorithms: ['HS256'],
+    algorithms: ["HS256"],
   });
   return payload as SessionData;
 }
 
 export async function getSession() {
-  const session = (await cookies()).get('session')?.value;
+  const session = (await cookies()).get("session")?.value;
   if (!session) return null;
   return await verifyToken(session);
 }
@@ -50,10 +73,10 @@ export async function setSession(user: NewUser) {
     expires: expiresInOneDay.toISOString(),
   };
   const encryptedSession = await signToken(session);
-  (await cookies()).set('session', encryptedSession, {
+  (await cookies()).set("session", encryptedSession, {
     expires: expiresInOneDay,
     httpOnly: true,
     secure: true,
-    sameSite: 'lax',
+    sameSite: "lax",
   });
 }
