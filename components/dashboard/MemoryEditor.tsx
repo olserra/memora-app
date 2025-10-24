@@ -88,7 +88,7 @@ export default function MemoryEditor({ memory, onClose, onSaved }: Props) {
       }}
     >
       <div
-        className="bg-white rounded-lg p-6 w-full max-w-2xl"
+        className="bg-white rounded-lg p-6 w-full max-w-4xl"
         // prevent clicks inside the dialog from bubbling to the overlay
         onPointerDown={(e) => e.stopPropagation()}
       >
@@ -106,7 +106,7 @@ export default function MemoryEditor({ memory, onClose, onSaved }: Props) {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="Content"
-            className="w-full rounded border px-3 py-2 min-h-[120px]"
+            className="w-full rounded border px-3 py-2 min-h-[240px]"
           />
           <input
             value={tagsStr}
@@ -116,20 +116,50 @@ export default function MemoryEditor({ memory, onClose, onSaved }: Props) {
           />
         </div>
 
-        <div className="mt-4 flex justify-end gap-2">
-          {memory && (
-            <Button variant="ghost" onClick={remove} disabled={saving}>
-              Delete
+        <div className="mt-4 flex items-center justify-between gap-4">
+          <div className="text-sm text-gray-500">
+            {memory?.createdAt || memory?.created_at ? (
+              <span>
+                Created: {formatDate(memory?.createdAt ?? memory?.created_at)}
+                {memory?.updatedAt || memory?.updated_at ? (
+                  <span>
+                    {" "}
+                    · Updated:{" "}
+                    {formatDate(memory?.updatedAt ?? memory?.updated_at)}
+                  </span>
+                ) : null}
+              </span>
+            ) : (
+              <span className="italic text-gray-400">Not saved yet</span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {memory && (
+              <Button variant="ghost" onClick={remove} disabled={saving}>
+                Delete
+              </Button>
+            )}
+            <Button variant="ghost" onClick={onClose} disabled={saving}>
+              Cancel
             </Button>
-          )}
-          <Button variant="ghost" onClick={onClose} disabled={saving}>
-            Cancel
-          </Button>
-          <Button onClick={save} disabled={saving}>
-            {saving ? "Saving..." : "Save"}
-          </Button>
+            <Button onClick={save} disabled={saving}>
+              {saving ? "Saving..." : "Save"}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
   );
+}
+
+function formatDate(val: any) {
+  if (!val) return "";
+  try {
+    const d = new Date(val);
+    if (Number.isNaN(d.getTime())) return String(val);
+    return d.toLocaleString();
+  } catch {
+    return String(val);
+  }
 }
