@@ -1,4 +1,4 @@
-import { db } from "@/lib/db/drizzle";
+import { client, db } from "@/lib/db/drizzle";
 import { getMemoriesGrouped, getUser } from "@/lib/db/queries";
 import { memories } from "@/lib/db/schema";
 import * as dev from "@/lib/devMemories";
@@ -79,6 +79,66 @@ export async function POST(req: Request) {
           tags: tags ? JSON.stringify(tags.slice(0, 3)) : JSON.stringify([]),
         })
         .returning();
+
+      // If an embedding service is configured, compute an embedding and store it.
+      // Expected env vars (server-side): EMBEDDING_API_URL and EMBEDDING_API_KEY.
+      // Example (Hugging Face Inference API):
+      // EMBEDDING_API_URL=https://api-inference.huggingface.co/embeddings/sentence-transformers/all-MiniLM-L6-v2
+      try {
+        const embedUrl = process.env.EMBEDDING_API_URL;
+        const embedKey = process.env.EMBEDDING_API_KEY;
+        if (embedUrl && row && row.id) {
+          const body = { inputs: content };
+          const headers: Record<string, string> = {
+            "Content-Type": "application/json",
+          };
+          if (embedKey) headers["Authorization"] = `Bearer ${embedKey}`;
+
+          const eRes = await fetch(embedUrl, {
+            method: "POST",
+            headers,
+            body: JSON.stringify(body),
+          });
+
+          // Hugging Face embeddings endpoint returns { embedding: [...] }
+          // Other providers may return arrays directly; normalize below.
+          if (eRes.ok) {
+            const eJson = await eRes.json();
+            const vec: number[] | undefined =
+              Array.isArray(eJson.embedding) &&
+              typeof eJson.embedding[0] === "number"
+                ? eJson.embedding
+                : Array.isArray(eJson) && Array.isArray(eJson[0])
+                ? (eJson[0] as number[])
+                : undefined;
+
+            if (vec && vec.length > 0) {
+              // Build a Postgres vector literal. This is safe because values are numbers.
+              const vecLiteral = `ARRAY[${vec
+                .map((v) => Number(v))
+                .join(",")} ]::vector`;
+              try {
+                // Use the low-level client to run raw SQL because Drizzle schema does not
+                // currently include the vector column type.
+                await client.unsafe(
+                  `UPDATE memories SET embedding = ${vecLiteral} WHERE id = ${row.id}`
+                );
+              } catch (sqlErr) {
+                // Non-fatal: log and continue.
+                // eslint-disable-next-line no-console
+                console.debug("Failed to write embedding to DB", sqlErr);
+              }
+            }
+          } else {
+            // eslint-disable-next-line no-console
+            console.debug("Embedding request failed", await eRes.text());
+          }
+        }
+      } catch (embedErr: any) {
+        // Non-fatal; continue returning the memory row.
+        // eslint-disable-next-line no-console
+        console.debug("Embedding step failed", embedErr?.message || embedErr);
+      }
 
       return NextResponse.json({ memory: row });
     } catch (error_: unknown) {
