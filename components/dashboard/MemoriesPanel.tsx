@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Plus, Search } from "lucide-react";
+import { Calendar, FileText, Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import useSWR from "swr";
 import MemoryEditor from "./MemoryEditor";
@@ -187,12 +187,11 @@ export default function MemoriesPanel() {
         }
 
         return (
-          <div className="space-y-3">
+          <div className="space-y-1">
             {filtered.map((m: any) => (
-              <Card
+              <button
                 key={m.id}
-                className="p-0 cursor-pointer"
-                tabIndex={0}
+                className="flex items-center gap-3 p-3 hover:bg-gray-50 transition-colors duration-200 cursor-pointer border-b border-gray-100 w-full text-left"
                 onClick={() => {
                   setEditing(m);
                   setEditorOpen(true);
@@ -205,20 +204,49 @@ export default function MemoriesPanel() {
                   }
                 }}
               >
-                <CardContent className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium">{m.title || "Untitled"}</div>
-                    <div className="text-sm text-muted-foreground line-clamp-2">
-                      {m.content}
-                    </div>
-                    <div className="mt-2">
-                      {(m.tags || []).map((t: string) => (
-                        <Tag key={t}>{t}</Tag>
-                      ))}
-                    </div>
+                <div className="flex-shrink-0">
+                  <div className="w-5 h-5 bg-gray-100 rounded flex items-center justify-center">
+                    <FileText className="w-3 h-3 text-gray-600" />
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-sm font-semibold text-gray-900 truncate flex-shrink-0 max-w-xs">
+                      {m.title || "Untitled"}
+                    </h3>
+                    <p className="text-gray-700 truncate flex-1 text-sm leading-tight">
+                      {m.content}
+                    </p>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {(m.tags || []).slice(0, 3).map((t: string) => (
+                        <span
+                          key={t}
+                          className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md"
+                        >
+                          {t}
+                        </span>
+                      ))}
+                      {(m.tags || []).length > 3 && (
+                        <span className="text-xs text-gray-500">
+                          +{(m.tags || []).length - 3}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-gray-500 flex-shrink-0">
+                      <Calendar className="w-3 h-3" />
+                      {new Date(m.createdAt).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </div>
+                    {m.category && m.category !== "general" && (
+                      <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-xs font-medium flex-shrink-0">
+                        {m.category}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </button>
             ))}
           </div>
         );
