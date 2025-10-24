@@ -1,4 +1,5 @@
 import { getTeamForUser, getUser } from "@/lib/db/queries";
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata, Viewport } from "next";
 import { Manrope } from "next/font/google";
 import { SWRConfig } from "swr";
@@ -47,6 +48,7 @@ export default function RootLayout({
         >
           {children}
         </SWRConfig>
+        <Analytics />
       </body>
     </html>
   );
