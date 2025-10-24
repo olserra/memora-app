@@ -26,7 +26,9 @@ function normalizeOutput(json: any) {
   return output;
 }
 
-async function extractMemoryFromMessage(message: string): Promise<string | null> {
+async function extractMemoryFromMessage(
+  message: string
+): Promise<string | null> {
   const extractPrompt = `Analyze this user message and extract any personal information that should be saved as a memory.
 
 Return only the concise fact if there's something worth saving, otherwise return "NONE".
@@ -46,13 +48,17 @@ Extract:`;
 
   try {
     const output = await callLLM(extractPrompt);
-    const lines = output.trim().split('\n');
-    const extractLine = lines.find(line => line.startsWith('Extract:'));
+    const lines = output.trim().split("\n");
+    const extractLine = lines.find((line) => line.startsWith("Extract:"));
     if (extractLine) {
-      let cleaned = extractLine.replace('Extract:', '').trim();
+      let cleaned = extractLine.replace("Extract:", "").trim();
       // Remove surrounding quotes if present
-      cleaned = cleaned.replace(/^["']|["']$/g, '');
-      if (cleaned === "NONE" || cleaned === "" || cleaned.toLowerCase().includes("none")) {
+      cleaned = cleaned.replace(/^["']|["']$/g, "");
+      if (
+        cleaned === "NONE" ||
+        cleaned === "" ||
+        cleaned.toLowerCase().includes("none")
+      ) {
         return null;
       }
       return cleaned;
