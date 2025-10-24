@@ -19,8 +19,8 @@ import {
   UserPlus,
   type LucideIcon,
 } from "lucide-react";
-import useSWR from "swr";
 import { useActionState } from "react";
+import useSWR from "swr";
 
 type PasswordState = {
   currentPassword?: string;

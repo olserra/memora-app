@@ -45,15 +45,17 @@ export async function GET() {
       // Over time (last 30 days)
       const createdAt = new Date(memory.createdAt);
       const now = new Date();
-      const diffDays = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+      const diffDays = Math.floor(
+        (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24)
+      );
       if (diffDays <= 30) {
-        const dateKey = createdAt.toISOString().split('T')[0];
+        const dateKey = createdAt.toISOString().split("T")[0];
         memoriesOverTime[dateKey] = (memoriesOverTime[dateKey] || 0) + 1;
       }
     }
 
     const topTags = Object.entries(tagCounts)
-      .sort(([,a], [,b]) => b - a)
+      .sort(([, a], [, b]) => b - a)
       .slice(0, 10)
       .map(([tag, count]) => ({ tag, count }));
 
@@ -61,7 +63,8 @@ export async function GET() {
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, count]) => ({ date, count }));
 
-    const averageContentLength = totalMemories > 0 ? Math.round(totalContentLength / totalMemories) : 0;
+    const averageContentLength =
+      totalMemories > 0 ? Math.round(totalContentLength / totalMemories) : 0;
 
     const metrics = {
       totalMemories,

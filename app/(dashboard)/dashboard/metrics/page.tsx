@@ -1,8 +1,18 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
-import { BookOpen, Tag, Clock } from "lucide-react";
+import { BookOpen, Clock, Tag } from "lucide-react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import useSWR from "swr";
 
 type Metrics = {
@@ -14,7 +24,15 @@ type Metrics = {
   totalTags: number;
 };
 
-const COLORS = ['#f97316', '#ea580c', '#dc2626', '#7c2d12', '#fed7aa', '#fdba74', '#fb923c'];
+const COLORS = [
+  "#f97316",
+  "#ea580c",
+  "#dc2626",
+  "#7c2d12",
+  "#fed7aa",
+  "#fdba74",
+  "#fb923c",
+];
 
 export default function MetricsPage() {
   const fetcher = (url: string) => fetch(url).then((res) => res.json());
@@ -34,10 +52,12 @@ export default function MetricsPage() {
     );
   }
 
-  const categoryData = Object.entries(metrics.memoriesByCategory).map(([category, count]) => ({
-    category: category.charAt(0).toUpperCase() + category.slice(1),
-    count,
-  }));
+  const categoryData = Object.entries(metrics.memoriesByCategory).map(
+    ([category, count]) => ({
+      category: category.charAt(0).toUpperCase() + category.slice(1),
+      count,
+    })
+  );
 
   const tagData = metrics.topTags.slice(0, 7).map((tag) => ({
     ...tag,
@@ -49,25 +69,29 @@ export default function MetricsPage() {
         {/* Total Memories */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Memories</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Memories
+            </CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{metrics.totalMemories}</div>
-            <p className="text-xs text-muted-foreground">
-              Memories created
-            </p>
+            <p className="text-xs text-muted-foreground">Memories created</p>
           </CardContent>
         </Card>
 
         {/* Average Content Length */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg. Content Length</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Avg. Content Length
+            </CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metrics.averageContentLength}</div>
+            <div className="text-2xl font-bold">
+              {metrics.averageContentLength}
+            </div>
             <p className="text-xs text-muted-foreground">
               Characters per memory
             </p>
@@ -82,9 +106,7 @@ export default function MetricsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{metrics.totalTags}</div>
-            <p className="text-xs text-muted-foreground">
-              Unique tags used
-            </p>
+            <p className="text-xs text-muted-foreground">Unique tags used</p>
           </CardContent>
         </Card>
 
@@ -114,18 +136,22 @@ export default function MetricsPage() {
           <CardContent>
             <div className="space-y-4">
               {tagData.map((tag, index) => {
-                const maxCount = Math.max(...tagData.map(t => t.count));
+                const maxCount = Math.max(...tagData.map((t) => t.count));
                 const percentage = (tag.count / maxCount) * 100;
-                
+
                 return (
                   <div key={tag.tag} className="flex items-center space-x-3">
                     <div className="flex-1">
                       <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm font-medium text-gray-900">{tag.tag}</span>
-                        <span className="text-sm text-gray-500">{tag.count}</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {tag.tag}
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          {tag.count}
+                        </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
+                        <div
                           className="bg-orange-500 h-2 rounded-full transition-all duration-300"
                           style={{ width: `${percentage}%` }}
                         ></div>
@@ -156,7 +182,12 @@ export default function MetricsPage() {
                 <XAxis dataKey="date" />
                 <YAxis />
                 <Tooltip />
-                <Line type="monotone" dataKey="count" stroke="#ea580c" strokeWidth={2} />
+                <Line
+                  type="monotone"
+                  dataKey="count"
+                  stroke="#ea580c"
+                  strokeWidth={2}
+                />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
