@@ -30,45 +30,23 @@ function normalizeOutput(json: any) {
 async function extractMemoryFromMessage(
   message: string
 ): Promise<{ content: string; tags: string[] } | null> {
-  const extractPrompt = `Analyze this user message and extract ONLY new personal information that the user is explicitly stating as facts about themselves or their life.
+  const extractPrompt = `
+    You are an extraction agent. Analyze the user message and decide if it contains a NEW PERSONAL FACT.
 
-IMPORTANT RULES:
-- Only extract if the user is SHARING new information, not asking questions or requesting information.
-- Do not extract from questions, commands, or statements about what they want you to do.
-- Only save memories for direct statements of personal facts, preferences, relationships, etc.
-- If the message is a question or doesn't contain new personal facts, return NONE.
+    STEP 1 — CLASSIFY the message type:
+    - PERSONAL_FACT → factual statement about the user's life, identity, relationships, preferences, or experiences.
+    - GENERIC_STATEMENT → opinions, feelings, reflections, or analysis about the conversation (not factual).
+    - COMMAND_OR_QUESTION → questions, instructions, or meta-communication with the assistant.
 
-Return in this format:
-Extract: [concise fact]
-Tags: [tag1, tag2, tag3] (always provide exactly 3 relevant tags)
+    STEP 2 — If type is not PERSONAL_FACT, return:
+    Extract: NONE
 
-If no memory to save, return:
-Extract: NONE
+    STEP 3 — If PERSONAL_FACT, output:
+    Extract: [concise fact]
+    Tags: [tag1, tag2, tag3]
 
-Examples:
-Message: "My girlfriend is Carla"
-Extract: User's girlfriend is named Carla
-Tags: relationship, personal, name
-
-Message: "I love hiking"
-Extract: User loves hiking
-Tags: hobby, interest, activity
-
-Message: "Hello how are you"
-Extract: NONE
-
-Message: "Do you remember my girlfriend's name?"
-Extract: NONE
-
-Message: "My favorite food is pizza"
-Extract: User's favorite food is pizza
-Tags: preference, food, personal
-
-Message: "Tell me about yourself"
-Extract: NONE
-
-Message: "${message}"
-`;
+    Message: "${message}"
+    `;
 
   try {
     const output = await callLLM(extractPrompt);
@@ -106,6 +84,69 @@ Message: "${message}"
   }
 }
 
+function shouldIgnoreMemory(extracted: {
+  content: string;
+  tags: string[];
+}): boolean {
+  const c = extracted.content.toLowerCase();
+
+  const genericPatterns = [
+    /\banalyzing\b/,
+    /\bthinking\b/,
+    /\basking\b/,
+    /\bchecking\b/,
+    /\btesting\b/,
+    /\btrying\b/,
+    /\bmessage\b/,
+    /\bthis chat\b/,
+    /\bconversation\b/,
+    /\bai\b/,
+    /\bassistant\b/,
+  ];
+
+  const metaTags = ["none", "meta", "action", "ai", "system"];
+
+  if (genericPatterns.some((rx) => rx.test(c))) return true;
+  if (metaTags.some((t) => extracted.tags.includes(t))) return true;
+  if (c.length < 10) return true; // evita ruído tipo "User happy"
+  return false;
+}
+
+async function validateMemoryWithClassifier(extracted: {
+  content: string;
+  tags: string[];
+}): Promise<boolean> {
+  // Optional binary validation using Hugging Face API
+  if (!process.env.HUGGING_FACE_TOKEN) return true; // Skip if no token
+
+  try {
+    const res = await fetch(
+      "https://api-inference.huggingface.co/models/facebook/bart-large-mnli",
+      {
+        headers: { Authorization: `Bearer ${process.env.HUGGING_FACE_TOKEN}` },
+        method: "POST",
+        body: JSON.stringify({
+          inputs: extracted.content,
+          parameters: {
+            candidate_labels: [
+              "personal_fact",
+              "meta_comment",
+              "action",
+              "question",
+            ],
+          },
+        }),
+      }
+    );
+    const data = await res.json();
+    return data?.labels?.[0] === "personal_fact";
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.debug("Classifier validation failed", error);
+    return true; // Allow if classifier fails
+  }
+}
+
 function buildPromptFromMemories(memRows: any[], userQuestion: string) {
   let context = "";
   if (memRows && memRows.length > 0) {
@@ -133,7 +174,7 @@ async function embedText(text: string): Promise<number[] | undefined> {
       "Content-Type": "application/json",
       Authorization: `Bearer ${embedKey}`,
     },
-    body: JSON.stringify({ inputs: text }),
+    body: JSON.stringify({ inputs: [text] }),
   });
   if (!res.ok) {
     // non-fatal
@@ -260,31 +301,48 @@ export async function POST(req: NextRequest) {
 
     // Extract and save memory if any
     const extracted = await extractMemoryFromMessage(message);
-    if (extracted) {
-      try {
-        const inserted = await db
-          .insert(memories)
-          .values({
-            userId: session.user.id,
-            title: extracted.content,
-            content: extracted.content,
-            category: "personal",
-            tags: JSON.stringify(extracted.tags),
-          })
-          .returning({ id: memories.id });
-        if (inserted[0]) {
-          const vec = await embedText(extracted.content);
-          if (vec) {
-            const vecStr = "[" + vec.join(",") + "]";
-            await client.unsafe(
-              `UPDATE memories SET embedding = $1::vector WHERE id = $2`,
-              [vecStr, inserted[0].id]
-            );
+    if (extracted && !shouldIgnoreMemory(extracted)) {
+      // Optional: Add classifier validation for extra robustness
+      const isValid = await validateMemoryWithClassifier(extracted);
+      if (isValid) {
+        try {
+          const inserted = await db
+            .insert(memories)
+            .values({
+              userId: session.user.id,
+              title: extracted.content,
+              content: extracted.content,
+              category: "personal",
+              tags: JSON.stringify(extracted.tags),
+            })
+            .returning({ id: memories.id });
+          if (inserted[0]) {
+            const vec = await embedText(extracted.content);
+            if (vec) {
+              const vecStr = "[" + vec.join(",") + "]";
+              try {
+                await client.unsafe(
+                  `UPDATE memories SET embedding = $1::vector WHERE id = $2`,
+                  [vecStr, inserted[0].id]
+                );
+                // Log embedding dimensionality for debugging
+                // eslint-disable-next-line no-console
+                console.debug(
+                  `Saved embedding for memory id=${inserted[0].id} dims=${vec.length}`
+                );
+              } catch (e) {
+                // eslint-disable-next-line no-console
+                console.debug(
+                  "Failed to update embedding for inserted memory:",
+                  e
+                );
+              }
+            }
           }
+        } catch (memError) {
+          // eslint-disable-next-line no-console
+          console.debug("Failed to save extracted memory", memError);
         }
-      } catch (memError) {
-        // eslint-disable-next-line no-console
-        console.debug("Failed to save extracted memory", memError);
       }
     }
 
@@ -319,11 +377,24 @@ export async function POST(req: NextRequest) {
     // Otherwise attempt embedding-based nearest-neighbor retrieval.
     if (prompt === message) {
       const vec = await embedText(message);
+      // Log embedding dimensionality returned by embedText
+      // eslint-disable-next-line no-console
+      console.debug("embedText returned length:", vec?.length ?? 0);
       if (vec && vec.length > 0) {
         try {
           const rows = await getNearestMemoriesForUser(session.user.id, vec, 5);
-          if (rows && rows.length > 0)
+          // Log number of rows retrieved for debugging
+          // eslint-disable-next-line no-console
+          console.debug(
+            `getNearestMemoriesForUser returned ${rows?.length ?? 0} rows for user ${session.user.id}`,
+            Array.isArray(rows) ? rows.slice(0, 3) : rows
+          );
+          if (rows && rows.length > 0) {
             prompt = buildPromptFromMemories(rows, message);
+          } else {
+            // eslint-disable-next-line no-console
+            console.warn(`No memories retrieved for user ${session.user.id}`);
+          }
         } catch (error_) {
           // non-fatal
           // eslint-disable-next-line no-console
@@ -349,32 +420,39 @@ export async function POST(req: NextRequest) {
           .map((t) => t.trim())
           .filter(Boolean);
         if (memoryContent) {
-          try {
-            // Create memory using internal DB call
-            const inserted = await db
-              .insert(memories)
-              .values({
-                userId: session.user.id,
-                title: memoryContent,
-                content: memoryContent,
-                category: "general",
-                tags: JSON.stringify(tags),
-              })
-              .returning({ id: memories.id });
-            if (inserted[0]) {
-              const vec = await embedText(memoryContent);
-              if (vec) {
-                const vecStr = "[" + vec.join(",") + "]";
-                await client.unsafe(
-                  `UPDATE memories SET embedding = $1::vector WHERE id = $2`,
-                  [vecStr, inserted[0].id]
-                );
+          const extracted = { content: memoryContent, tags };
+          if (!shouldIgnoreMemory(extracted)) {
+            // Optional: Add classifier validation for extra robustness
+            const isValid = await validateMemoryWithClassifier(extracted);
+            if (isValid) {
+              try {
+                // Create memory using internal DB call
+                const inserted = await db
+                  .insert(memories)
+                  .values({
+                    userId: session.user.id,
+                    title: memoryContent,
+                    content: memoryContent,
+                    category: "general",
+                    tags: JSON.stringify(tags),
+                  })
+                  .returning({ id: memories.id });
+                if (inserted[0]) {
+                  const vec = await embedText(memoryContent);
+                  if (vec) {
+                    const vecStr = "[" + vec.join(",") + "]";
+                    await client.unsafe(
+                      `UPDATE memories SET embedding = $1::vector WHERE id = $2`,
+                      [vecStr, inserted[0].id]
+                    );
+                  }
+                }
+              } catch (memError) {
+                // Non-fatal, log but continue
+                // eslint-disable-next-line no-console
+                console.debug("Failed to save memory", memError);
               }
             }
-          } catch (memError) {
-            // Non-fatal, log but continue
-            // eslint-disable-next-line no-console
-            console.debug("Failed to save memory", memError);
           }
         }
         // Remove the marker from the response (in case it wasn't removed above)
