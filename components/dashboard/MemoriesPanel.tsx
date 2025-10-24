@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Calendar, FileText, Plus, Search } from "lucide-react";
+import { Calendar, FileText, Grid3X3, List, Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import useSWR from "swr";
 import MemoryEditor from "./MemoryEditor";
@@ -67,6 +67,17 @@ export default function MemoriesPanel() {
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
+          <div className="flex items-center border rounded-md px-4 py-2 gap-2 bg-white min-w-[300px]">
+            <Search className="w-4 h-4 text-gray-500" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search memories, tags or content"
+              className="outline-none text-sm flex-1"
+            />
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             onClick={() => {
@@ -76,27 +87,18 @@ export default function MemoriesPanel() {
           >
             <Plus className="mr-2 h-4 w-4" /> New Memory
           </Button>
-          <div className="flex items-center border rounded-md px-3 py-1 gap-2 bg-white">
-            <Search className="w-4 h-4 text-gray-500" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search memories, tags or content"
-              className="outline-none text-sm"
-            />
-          </div>
           <div className="flex items-center gap-2">
             <Button
               variant={view === "grid" ? "secondary" : "ghost"}
               onClick={() => setView("grid")}
             >
-              Grid
+              <Grid3X3 className="h-4 w-4" />
             </Button>
             <Button
               variant={view === "list" ? "secondary" : "ghost"}
               onClick={() => setView("list")}
             >
-              List
+              <List className="h-4 w-4" />
             </Button>
           </div>
         </div>
