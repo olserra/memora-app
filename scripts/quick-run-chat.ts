@@ -20,7 +20,7 @@ async function embedText(text: string) {
       "Content-Type": "application/json",
       Authorization: `Bearer ${embedKey}`,
     },
-    body: JSON.stringify({ inputs: text }),
+    body: JSON.stringify({ inputs: [text] }),
   });
   if (!res.ok) throw new Error(`Embedding request failed: ${res.status}`);
   const j = await res.json();
@@ -44,13 +44,12 @@ async function retrieveTopMemoriesForUser(
   vec: number[],
   limit = 5
 ) {
-  const vecLiteral = `ARRAY[${vec.map(Number).join(",")} ]::vector`;
-  const sql = `SELECT id, title, content, user_id, (embedding <-> ${vecLiteral}) AS distance
+  const sql = `SELECT id, title, content, user_id, (embedding <-> $1::vector) AS distance
                FROM memories
-               WHERE user_id = ${userId} AND embedding IS NOT NULL
+               WHERE user_id = $2 AND embedding IS NOT NULL
                ORDER BY distance
-               LIMIT ${limit}`;
-  const rows = await client.unsafe(sql);
+               LIMIT $3`;
+  const rows = await client.unsafe(sql, [vec, userId, limit]);
   return rows as any[];
 }
 

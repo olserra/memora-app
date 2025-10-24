@@ -47,9 +47,10 @@ try {
     for (const r of rows) {
       try {
         const vec = await fetchEmbedding(embedUrl, embedKey, r.content);
-        const vecLiteral = `ARRAY[${vec.map(Number).join(",")} ]::vector`;
+        // Parameterized update: pass the vector and the id as parameters.
         await client.unsafe(
-          `UPDATE memories SET embedding = ${vecLiteral} WHERE id = ${r.id}`
+          `UPDATE memories SET embedding = $1::vector WHERE id = $2`,
+          [vec, r.id]
         );
         console.log("Backfilled embedding for id", r.id);
       } catch (err) {

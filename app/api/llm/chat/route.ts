@@ -1,5 +1,8 @@
 import { getSession } from "@/lib/auth/session";
-import { client } from "@/lib/db/drizzle";
+import {
+  getMemoriesGrouped,
+  getNearestMemoriesForUser,
+} from "@/lib/db/queries";
 import { NextRequest, NextResponse } from "next/server";
 
 type ChatRequest = { message: string };
@@ -66,21 +69,8 @@ async function embedText(text: string): Promise<number[] | undefined> {
   return undefined;
 }
 
-async function retrieveTopMemoriesForUser(
-  userId: number,
-  vec: number[],
-  limit = 5
-) {
-  if (!vec || vec.length === 0) return [];
-  const vecLiteral = `ARRAY[${vec.map(Number).join(",")} ]::vector`;
-  const sql = `SELECT id, title, content, user_id, (embedding <-> ${vecLiteral}) AS distance
-               FROM memories
-               WHERE user_id = ${userId} AND embedding IS NOT NULL
-               ORDER BY distance
-               LIMIT ${limit}`;
-  const rows = await client.unsafe(sql);
-  return rows as any[];
-}
+// nearest-memory retrieval moved to `lib/db/queries.ts` as
+// `getNearestMemoriesForUser` to centralize SQL and make testing easier.
 
 async function callLLM(prompt: string) {
   const llmUrl = process.env.LLM_API_URL;
@@ -134,18 +124,43 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ output: mock });
     }
 
-    // Build prompt using nearest memories when available
+    // If the user explicitly asks to list or show memories, fetch them
+    // directly (no embedding required). This avoids returning a generic
+    // memory-jogging prompt when the user expects their stored memories.
     let prompt = message;
-    const vec = await embedText(message);
-    if (vec && vec.length > 0) {
+    const listIntentRe =
+      /\bwhat\s+memories\b|\bshow\s+my\s+memories\b|\blist\s+my\s+memories\b|\bmy\s+memories\b/i;
+    if (listIntentRe.test(message)) {
       try {
-        const rows = await retrieveTopMemoriesForUser(session.user.id, vec, 5);
-        if (rows && rows.length > 0)
-          prompt = buildPromptFromMemories(rows, message);
-      } catch (error_) {
-        // non-fatal
+        const grouped = await getMemoriesGrouped();
+        // flatten grouped -> items
+        const items: any[] = [];
+        for (const cat of Object.keys(grouped)) {
+          for (const it of grouped[cat]) items.push(it);
+        }
+        if (items.length > 0) {
+          prompt = buildPromptFromMemories(items, message);
+        }
+      } catch (err) {
+        // fall through to embedding-based retrieval below
         // eslint-disable-next-line no-console
-        console.debug("Memory retrieval failed", error_);
+        console.debug("Failed to fetch full memories for list intent", err);
+      }
+    }
+
+    // Otherwise attempt embedding-based nearest-neighbor retrieval.
+    if (prompt === message) {
+      const vec = await embedText(message);
+      if (vec && vec.length > 0) {
+        try {
+          const rows = await getNearestMemoriesForUser(session.user.id, vec, 5);
+          if (rows && rows.length > 0)
+            prompt = buildPromptFromMemories(rows, message);
+        } catch (error_) {
+          // non-fatal
+          // eslint-disable-next-line no-console
+          console.debug("Memory retrieval failed", error_);
+        }
       }
     }
 

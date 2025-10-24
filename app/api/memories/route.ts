@@ -113,20 +113,17 @@ export async function POST(req: Request) {
                 : undefined;
 
             if (vec && vec.length > 0) {
-              // Build a Postgres vector literal. This is safe because values are numbers.
-              const vecLiteral = `ARRAY[${vec
-                .map((v) => Number(v))
-                .join(",")} ]::vector`;
               try {
-                // Use the low-level client to run raw SQL because Drizzle schema does not
-                // currently include the vector column type.
+                // Use a parameterized query and pass the vector as a parameter.
+                // Cast the incoming parameter to `vector` in SQL.
                 await client.unsafe(
-                  `UPDATE memories SET embedding = ${vecLiteral} WHERE id = ${row.id}`
+                  `UPDATE memories SET embedding = $1::vector WHERE id = $2`,
+                  [vec, row.id]
                 );
-              } catch (sqlErr) {
+              } catch (error_) {
                 // Non-fatal: log and continue.
                 // eslint-disable-next-line no-console
-                console.debug("Failed to write embedding to DB", sqlErr);
+                console.debug("Failed to write embedding to DB", error_);
               }
             }
           } else {
@@ -134,10 +131,10 @@ export async function POST(req: Request) {
             console.debug("Embedding request failed", await eRes.text());
           }
         }
-      } catch (embedErr: any) {
+      } catch (error_: any) {
         // Non-fatal; continue returning the memory row.
         // eslint-disable-next-line no-console
-        console.debug("Embedding step failed", embedErr?.message || embedErr);
+        console.debug("Embedding step failed", error_?.message || error_);
       }
 
       return NextResponse.json({ memory: row });

@@ -1,7 +1,7 @@
 import { verifyToken } from "@/lib/auth/session";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { cookies } from "next/headers";
-import { db } from "./drizzle";
+import { client, db } from "./drizzle";
 import { activityLogs, memories, users } from "./schema";
 
 export async function getMemoriesGrouped() {
@@ -27,6 +27,30 @@ export async function getMemoriesGrouped() {
   }
 
   return grouped;
+}
+
+/**
+ * Retrieve nearest memories for a given user by vector similarity using the
+ * low-level `client.unsafe` call. This centralizes the retrieval logic used
+ * by the chat handler and scripts. Returns an array of rows with at least
+ * { id, title, content, user_id, distance } fields when embedding exists.
+ */
+export async function getNearestMemoriesForUser(
+  userId: number,
+  vec: number[],
+  limit = 5
+) {
+  if (!vec || vec.length === 0) return [];
+  // Use a parameterized query: pass the vector as a parameter and cast to
+  // `vector` in SQL. This avoids interpolating numeric values directly into
+  // the SQL string.
+  const sql = `SELECT id, title, content, user_id, (embedding <-> $1::vector) AS distance
+               FROM memories
+               WHERE user_id = $2 AND embedding IS NOT NULL
+               ORDER BY distance
+               LIMIT $3`;
+  const rows = await client.unsafe(sql, [vec, userId, limit]);
+  return rows as any[];
 }
 
 export async function getUser() {
