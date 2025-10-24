@@ -1,16 +1,20 @@
 # Memory Management System
 
 ## Overview
+
 The Memora app automatically saves relevant personal information shared during chat conversations with the LLM. This system ensures that important user details are captured and stored for future reference, enhancing the personalized experience.
 
 ## How It Works
 
 ### 1. Message Analysis
+
 When a user sends a message in the chat (`POST /api/llm/chat`):
+
 - The system first analyzes the message for potential memories using a dedicated LLM call
 - This separate analysis prevents interference with the main conversation flow
 
 ### 2. Memory Extraction Process
+
 The system uses a specialized prompt to extract memories:
 
 ```
@@ -37,7 +41,9 @@ Extract: NONE
 ```
 
 ### 3. Automatic Saving
+
 If a memory is extracted:
+
 - **Title**: Set to the extracted fact (e.g., "User's girlfriend is named Carla")
 - **Content**: Same as title (the concise fact)
 - **Category**: "personal"
@@ -46,6 +52,7 @@ If a memory is extracted:
 - The memory is inserted into the database via Drizzle ORM
 
 ### 4. Response Processing
+
 - The main chat LLM responds normally to the user's message
 - No indication is given to the user that a memory was saved
 - The conversation continues seamlessly
@@ -53,6 +60,7 @@ If a memory is extracted:
 ## Memory Criteria
 
 ### Save:
+
 - Personal relationships (family, friends, partners)
 - Preferences and interests (hobbies, favorites)
 - Personal facts (age, occupation, location)
@@ -60,6 +68,7 @@ If a memory is extracted:
 - Clear opinions and values
 
 ### Don't Save:
+
 - Greetings and small talk
 - General knowledge or facts
 - Temporary information
@@ -69,22 +78,26 @@ If a memory is extracted:
 ## Technical Implementation
 
 ### Files Involved:
+
 - `app/api/llm/chat/route.ts`: Main chat endpoint with memory extraction
 - `lib/db/schema.ts`: Memory table definition
 - `lib/db/queries.ts`: Database operations
 
 ### Key Functions:
+
 - `extractMemoryFromMessage()`: Analyzes user input and extracts memory data
 - `buildPromptFromMemories()`: Includes existing memories in chat context
 - Database insertion via `db.insert(memories)`
 
 ### Data Flow:
+
 1. User message → Extract memory (LLM call)
 2. If memory found → Save to DB
 3. Generate chat response (LLM call with memory context)
 4. Return response to user
 
 ## Benefits
+
 - **Seamless**: Users don't need to manually save memories
 - **Intelligent**: AI determines what information is worth remembering
 - **Organized**: Automatic tagging for better searchability
@@ -92,6 +105,7 @@ If a memory is extracted:
 - **Privacy-conscious**: Only saves clearly personal information
 
 ## Future Enhancements
+
 - User confirmation before saving sensitive information
 - Memory editing and deletion via chat
 - Integration with calendar/events
