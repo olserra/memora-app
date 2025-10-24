@@ -1,4 +1,4 @@
-import { getTeamForUser, getUser } from "@/lib/db/queries";
+import { getUser } from "@/lib/db/queries";
 import { Analytics } from "@vercel/analytics/next";
 import type { Metadata, Viewport } from "next";
 import { Manrope } from "next/font/google";
@@ -42,7 +42,6 @@ export default function RootLayout({
               // We do NOT await here
               // Only components that read this data will suspend
               "/api/user": getUser(),
-              "/api/team": getTeamForUser(),
             },
           }}
         >

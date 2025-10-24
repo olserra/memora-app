@@ -57,16 +57,12 @@ export async function getNearestMemoriesForUser(
 
 export async function getUser() {
   const sessionCookie = (await cookies()).get("session");
-  if (!sessionCookie || !sessionCookie.value) {
+  if (!sessionCookie?.value) {
     return null;
   }
 
   const sessionData = await verifyToken(sessionCookie.value);
-  if (
-    !sessionData ||
-    !sessionData.user ||
-    typeof sessionData.user.id !== "number"
-  ) {
+  if (!sessionData?.user || typeof sessionData.user.id !== "number") {
     return null;
   }
 
@@ -87,9 +83,6 @@ export async function getUser() {
   return user[0];
 }
 
-// Team-related functions removed for B2C refactor. If needed later, reintroduce
-// user-scoped subscription helpers.
-
 export async function getActivityLogs() {
   const user = await getUser();
   if (!user) {
@@ -109,13 +102,4 @@ export async function getActivityLogs() {
     .where(eq(activityLogs.userId, user.id))
     .orderBy(desc(activityLogs.timestamp))
     .limit(10);
-}
-
-export async function getTeamForUser() {
-  const user = await getUser();
-  if (!user) {
-    return null;
-  }
-  // Teams were removed in the B2C migration. Return null for compatibility.
-  return null;
 }

@@ -5,25 +5,21 @@ import {
   AlertCircle,
   CheckCircle,
   Lock,
+  LogIn,
   LogOut,
-  Mail,
   Settings,
-  UserCog,
   UserMinus,
   UserPlus,
   type LucideIcon,
 } from "lucide-react";
 
-const iconMap: Record<ActivityType, LucideIcon> = {
+const activityIcons: Record<ActivityType, LucideIcon> = {
   [ActivityType.SIGN_UP]: UserPlus,
-  [ActivityType.SIGN_IN]: UserCog,
+  [ActivityType.SIGN_IN]: LogIn,
   [ActivityType.SIGN_OUT]: LogOut,
   [ActivityType.UPDATE_PASSWORD]: Lock,
   [ActivityType.DELETE_ACCOUNT]: UserMinus,
   [ActivityType.UPDATE_ACCOUNT]: Settings,
-  [ActivityType.CREATE_TEAM]: UserPlus,
-  [ActivityType.REMOVE_TEAM_MEMBER]: UserMinus,
-  [ActivityType.INVITE_TEAM_MEMBER]: Mail,
   [ActivityType.ACCEPT_INVITATION]: CheckCircle,
 };
 
@@ -55,12 +51,6 @@ function formatAction(action: ActivityType): string {
       return "You deleted your account";
     case ActivityType.UPDATE_ACCOUNT:
       return "You updated your account";
-    case ActivityType.CREATE_TEAM:
-      return "You created a new team";
-    case ActivityType.REMOVE_TEAM_MEMBER:
-      return "You removed a team member";
-    case ActivityType.INVITE_TEAM_MEMBER:
-      return "You invited a team member";
     case ActivityType.ACCEPT_INVITATION:
       return "You accepted an invitation";
     default:
@@ -81,7 +71,8 @@ export default async function ActivityPage() {
           {logs.length > 0 ? (
             <ul className="space-y-4">
               {logs.map((log) => {
-                const Icon = iconMap[log.action as ActivityType] || Settings;
+                const Icon =
+                  activityIcons[log.action as ActivityType] || Settings;
                 const formattedAction = formatAction(
                   log.action as ActivityType
                 );

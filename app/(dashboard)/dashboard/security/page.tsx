@@ -5,7 +5,21 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Lock, Trash2 } from "lucide-react";
+import { ActivityType } from "@/lib/db/activity";
+import {
+  AlertCircle,
+  CheckCircle,
+  Loader2,
+  Lock,
+  LogIn,
+  LogOut,
+  Settings,
+  Trash2,
+  UserMinus,
+  UserPlus,
+  type LucideIcon,
+} from "lucide-react";
+import useSWR from "swr";
 import { useActionState } from "react";
 
 type PasswordState = {
@@ -22,7 +36,62 @@ type DeleteState = {
   success?: string;
 };
 
+const activityIcons: Record<ActivityType, LucideIcon> = {
+  [ActivityType.SIGN_UP]: UserPlus,
+  [ActivityType.SIGN_IN]: LogIn,
+  [ActivityType.SIGN_OUT]: LogOut,
+  [ActivityType.UPDATE_PASSWORD]: Lock,
+  [ActivityType.DELETE_ACCOUNT]: UserMinus,
+  [ActivityType.UPDATE_ACCOUNT]: Settings,
+  [ActivityType.ACCEPT_INVITATION]: CheckCircle,
+};
+
+function getRelativeTime(date: Date) {
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (diffInSeconds < 60) return "just now";
+  if (diffInSeconds < 3600)
+    return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+  if (diffInSeconds < 86400)
+    return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+  if (diffInSeconds < 604800)
+    return `${Math.floor(diffInSeconds / 86400)} days ago`;
+  return date.toLocaleDateString();
+}
+
+function formatAction(action: ActivityType): string {
+  switch (action) {
+    case ActivityType.SIGN_UP:
+      return "You signed up";
+    case ActivityType.SIGN_IN:
+      return "You signed in";
+    case ActivityType.SIGN_OUT:
+      return "You signed out";
+    case ActivityType.UPDATE_PASSWORD:
+      return "You changed your password";
+    case ActivityType.DELETE_ACCOUNT:
+      return "You deleted your account";
+    case ActivityType.UPDATE_ACCOUNT:
+      return "You updated your account";
+    case ActivityType.ACCEPT_INVITATION:
+      return "You accepted an invitation";
+    default:
+      return "Unknown action occurred";
+  }
+}
+
+type ActivityLog = {
+  id: number;
+  action: string;
+  timestamp: string;
+  ipAddress?: string;
+};
+
 export default function SecurityPage() {
+  const fetcher = (url: string) => fetch(url).then((res) => res.json());
+  const { data: logs } = useSWR<ActivityLog[]>("/api/activity", fetcher);
+
   const [passwordState, passwordAction, isPasswordPending] = useActionState<
     PasswordState,
     FormData
@@ -112,7 +181,7 @@ export default function SecurityPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="mb-8">
         <CardHeader>
           <CardTitle>Delete Account</CardTitle>
         </CardHeader>
@@ -157,6 +226,53 @@ export default function SecurityPage() {
               )}
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Activity</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {logs && logs.length > 0 ? (
+            <ul className="space-y-4">
+              {logs.map((log) => {
+                const Icon =
+                  activityIcons[log.action as ActivityType] || Settings;
+                const formattedAction = formatAction(
+                  log.action as ActivityType
+                );
+
+                return (
+                  <li key={log.id} className="flex items-center space-x-4">
+                    <div className="bg-orange-100 rounded-full p-2">
+                      <Icon className="w-5 h-5 text-orange-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900">
+                        {formattedAction}
+                        {log.ipAddress && ` from IP ${log.ipAddress}`}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {getRelativeTime(new Date(log.timestamp))}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <div className="flex flex-col items-center justify-center text-center py-12">
+              <AlertCircle className="h-12 w-12 text-orange-500 mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                No activity yet
+              </h3>
+              <p className="text-sm text-gray-500 max-w-sm">
+                When you perform actions like signing in or updating your
+                account, they'll appear here.
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </section>
