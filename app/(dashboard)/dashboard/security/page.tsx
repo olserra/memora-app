@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Lock, Trash2, Loader2 } from 'lucide-react';
-import { useActionState } from 'react';
-import { updatePassword, deleteAccount } from '@/app/(login)/actions';
+import { deleteAccount, updatePassword } from "@/app/(login)/actions";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Loader2, Lock, Trash2 } from "lucide-react";
+import { useActionState } from "react";
 
 type PasswordState = {
   currentPassword?: string;
