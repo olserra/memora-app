@@ -18,8 +18,7 @@ async function fetchEmbedding(
   });
   if (!res.ok) throw new Error(`Embedding request failed: ${res.status}`);
   const j = await res.json();
-  if (Array.isArray(j) && typeof j[0] === "number")
-    return j as number[];
+  if (Array.isArray(j) && typeof j[0] === "number") return j as number[];
   if (Array.isArray(j.embedding) && typeof j.embedding[0] === "number")
     return j.embedding as number[];
   if (Array.isArray(j) && Array.isArray(j[0])) return j[0] as number[];
