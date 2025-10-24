@@ -3,6 +3,7 @@ import { client, db } from "@/lib/db/drizzle";
 import {
   getMemoriesGrouped,
   getNearestMemoriesForUser,
+  getUser,
 } from "@/lib/db/queries";
 import { memories } from "@/lib/db/schema";
 import { NextRequest, NextResponse } from "next/server";
@@ -29,7 +30,13 @@ function normalizeOutput(json: any) {
 async function extractMemoryFromMessage(
   message: string
 ): Promise<{ content: string; tags: string[] } | null> {
-  const extractPrompt = `Analyze this user message and extract any personal information that should be saved as a memory.
+  const extractPrompt = `Analyze this user message and extract ONLY new personal information that the user is explicitly stating as facts about themselves or their life.
+
+IMPORTANT RULES:
+- Only extract if the user is SHARING new information, not asking questions or requesting information.
+- Do not extract from questions, commands, or statements about what they want you to do.
+- Only save memories for direct statements of personal facts, preferences, relationships, etc.
+- If the message is a question or doesn't contain new personal facts, return NONE.
 
 Return in this format:
 Extract: [concise fact]
@@ -50,6 +57,16 @@ Tags: hobby, interest, activity
 Message: "Hello how are you"
 Extract: NONE
 
+Message: "Do you remember my girlfriend's name?"
+Extract: NONE
+
+Message: "My favorite food is pizza"
+Extract: User's favorite food is pizza
+Tags: preference, food, personal
+
+Message: "Tell me about yourself"
+Extract: NONE
+
 Message: "${message}"
 `;
 
@@ -61,7 +78,7 @@ Message: "${message}"
 
     if (extractLine) {
       let cleaned = extractLine.replace("Extract:", "").trim();
-      cleaned = cleaned.replace(/^["']|["']$/g, "");
+      cleaned = cleaned.replace(/^["']/, "").replace(/["']$/, "");
       if (
         cleaned === "NONE" ||
         cleaned === "" ||
@@ -90,32 +107,6 @@ Message: "${message}"
 }
 
 function buildPromptFromMemories(memRows: any[], userQuestion: string) {
-  const baseInstructions = `You are a helpful assistant.
-
-You MUST save new memories for ANY personal information the user shares. Look at the content and decide if it's worth remembering.
-
-**Always save:**
-- Names, relationships, preferences, facts about the user
-- Anything that could be useful to remember for future conversations
-
-**How to save:**
-Include [MEMORY: concise fact | tag1, tag2, tag3] in your response. Extract the key information and provide exactly 3 relevant tags.
-
-**Examples:**
-User: "My girlfriend is Carla"
-Assistant: "That's nice! [MEMORY: User's girlfriend is named Carla | relationship, personal, name]"
-
-User: "I love hiking"
-Assistant: "Hiking is fun! [MEMORY: User loves hiking | hobby, interest, activity]"
-
-User: "I'm 25 years old"
-Assistant: "Cool! [MEMORY: User is 25 years old | personal, age, fact]"
-
-User: "Hello"
-Assistant: "Hi there!" (no memory)
-
-Save memories for relevant personal information.`;
-
   let context = "";
   if (memRows && memRows.length > 0) {
     const chunks = memRows.map(
@@ -124,9 +115,7 @@ Save memories for relevant personal information.`;
     context = `\n\nExisting Memories:\n${chunks.join("\n---\n")}`;
   }
 
-  const prompt = `${baseInstructions}${context}
-
-Question: ${userQuestion}`;
+  const prompt = `${context}\n\nQuestion: ${userQuestion}`;
   return prompt;
 }
 
@@ -163,7 +152,7 @@ async function embedText(text: string): Promise<number[] | undefined> {
 // nearest-memory retrieval moved to `lib/db/queries.ts` as
 // `getNearestMemoriesForUser` to centralize SQL and make testing easier.
 
-async function callLLM(prompt: string) {
+async function callLLM(prompt: string, userName?: string | null) {
   const llmUrl = process.env.LLM_API_URL;
   const llmKey = process.env.LLM_API_KEY || process.env.HUGGING_FACE_TOKEN;
   if (!llmUrl) throw new Error("No LLM configured (LLM_API_URL missing)");
@@ -180,11 +169,67 @@ async function callLLM(prompt: string) {
     ? {
         model: process.env.LLM_MODEL || "gpt-3.5-turbo",
         messages: [
-          { role: "system", content: "You are a helpful assistant." },
+          {
+            role: "system",
+            content: `You are Memora, a polite, concise, and kind AI assistant designed to help users remember and manage their personal memories. Use any existing memories provided in the conversation to help answer the user's questions accurately.
+
+You MUST save new memories for ANY personal information the user shares. Look at the content and decide if it's worth remembering.
+
+**Always save:**
+- Names, relationships, preferences, facts about the user
+- Anything that could be useful to remember for future conversations
+
+**How to save:**
+Include [MEMORY: concise fact | tag1, tag2, tag3] in your response. Extract the key information and provide exactly 3 relevant tags.
+
+**Examples:**
+User: "My girlfriend is Carla"
+Assistant: "That's nice! [MEMORY: User's girlfriend is named Carla | relationship, personal, name]"
+
+User: "I love hiking"
+Assistant: "Hiking is fun! [MEMORY: User loves hiking | hobby, interest, activity]"
+
+User: "I'm 25 years old"
+Assistant: "Cool! [MEMORY: User is 25 years old | personal, age, fact]"
+
+User: "Hello"
+Assistant: "Hi there!" (no memory)
+
+Save memories for relevant personal information.`,
+          },
           { role: "user", content: prompt },
         ],
       }
-    : { inputs: prompt };
+    : {
+        inputs: `You are Memora, a polite, concise, and kind AI assistant designed to help users remember and manage their personal memories. Use any existing memories provided in the conversation to help answer the user's questions accurately.
+
+You MUST save new memories for ANY personal information the user shares. Look at the content and decide if it's worth remembering.
+
+**Always save:**
+- Names, relationships, preferences, facts about the user
+- Anything that could be useful to remember for future conversations
+
+**How to save:**
+Include [MEMORY: concise fact | tag1, tag2, tag3] in your response. Extract the key information and provide exactly 3 relevant tags.
+
+**Examples:**
+User: "My girlfriend is Carla"
+Assistant: "That's nice! [MEMORY: User's girlfriend is named Carla | relationship, personal, name]"
+
+User: "I love hiking"
+Assistant: "Hiking is fun! [MEMORY: User loves hiking | hobby, interest, activity]"
+
+User: "I'm 25 years old"
+Assistant: "Cool! [MEMORY: User is 25 years old | personal, age, fact]"
+
+User: "Hello"
+Assistant: "Hi there!" (no memory)
+
+Save memories for relevant personal information.
+
+User: ${prompt}
+Memora:`,
+      };
   const res = await fetch(llmUrl, {
     method: "POST",
     headers,
@@ -208,6 +253,10 @@ export async function POST(req: NextRequest) {
     const session = await getSession();
     if (!session)
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+
+    const user = await getUser();
+    if (!user)
+      return NextResponse.json({ error: "User not found" }, { status: 401 });
 
     // Extract and save memory if any
     const extracted = await extractMemoryFromMessage(message);
@@ -284,7 +333,10 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-      let output = await callLLM(prompt);
+      let output = await callLLM(prompt, user.name);
+
+      // Remove any memory markers from the response
+      output = output.replaceAll(/\[MEMORY:[^\]]*\]/g, "").trim();
 
       // Check for memory saving marker
       const memoryRegex = /\[MEMORY:\s*(.*?)\s*\|\s*(.*?)\]/;
@@ -325,7 +377,7 @@ export async function POST(req: NextRequest) {
             console.debug("Failed to save memory", memError);
           }
         }
-        // Remove the marker from the response
+        // Remove the marker from the response (in case it wasn't removed above)
         output = output.replace(memoryRegex, "").trim();
       }
 
