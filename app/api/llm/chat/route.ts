@@ -386,7 +386,9 @@ export async function POST(req: NextRequest) {
           // Log number of rows retrieved for debugging
           // eslint-disable-next-line no-console
           console.debug(
-            `getNearestMemoriesForUser returned ${rows?.length ?? 0} rows for user ${session.user.id}`,
+            `getNearestMemoriesForUser returned ${
+              rows?.length ?? 0
+            } rows for user ${session.user.id}`,
             Array.isArray(rows) ? rows.slice(0, 3) : rows
           );
           if (rows && rows.length > 0) {
