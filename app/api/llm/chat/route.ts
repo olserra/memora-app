@@ -28,31 +28,39 @@ function normalizeOutput(json: any) {
 
 async function extractMemoryFromMessage(
   message: string
-): Promise<string | null> {
+): Promise<{ content: string; tags: string[] } | null> {
   const extractPrompt = `Analyze this user message and extract any personal information that should be saved as a memory.
 
-Return only the concise fact if there's something worth saving, otherwise return "NONE".
+Return in this format:
+Extract: [concise fact]
+Tags: [tag1, tag2, tag3]
+
+If no memory to save, return:
+Extract: NONE
 
 Examples:
 Message: "My girlfriend is Carla"
-Extract: "User's girlfriend is named Carla"
+Extract: User's girlfriend is named Carla
+Tags: relationship, personal
 
-Message: "I love pizza"
-Extract: "User loves pizza"
+Message: "I love hiking"
+Extract: User loves hiking
+Tags: hobby, interest
 
 Message: "Hello how are you"
-Extract: "NONE"
+Extract: NONE
 
 Message: "${message}"
-Extract:`;
+`;
 
   try {
     const output = await callLLM(extractPrompt);
     const lines = output.trim().split("\n");
     const extractLine = lines.find((line) => line.startsWith("Extract:"));
+    const tagsLine = lines.find((line) => line.startsWith("Tags:"));
+
     if (extractLine) {
       let cleaned = extractLine.replace("Extract:", "").trim();
-      // Remove surrounding quotes if present
       cleaned = cleaned.replace(/^["']|["']$/g, "");
       if (
         cleaned === "NONE" ||
@@ -61,7 +69,17 @@ Extract:`;
       ) {
         return null;
       }
-      return cleaned;
+
+      let tags: string[] = [];
+      if (tagsLine) {
+        const tagsText = tagsLine.replace("Tags:", "").trim();
+        tags = tagsText
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean);
+      }
+
+      return { content: cleaned, tags };
     }
     return null;
   } catch (error) {
@@ -192,15 +210,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
     // Extract and save memory if any
-    const extractedMemory = await extractMemoryFromMessage(message);
-    if (extractedMemory) {
+    const extracted = await extractMemoryFromMessage(message);
+    if (extracted) {
       try {
         await db.insert(memories).values({
           userId: session.user.id,
-          title: extractedMemory,
-          content: extractedMemory,
+          title: extracted.content,
+          content: extracted.content,
           category: "personal",
-          tags: JSON.stringify([]),
+          tags: JSON.stringify(extracted.tags),
         });
       } catch (memError) {
         // eslint-disable-next-line no-console
