@@ -7,7 +7,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     // Profile page removed — send users to General Settings instead
-    router.replace("/dashboard/general");
+    router.replace("/dashboard/memories");
   }, [router]);
 
   return null;
