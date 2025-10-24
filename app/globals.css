@@ -273,3 +273,25 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Make interactive elements show a pointer cursor across the app.
+   This keeps the UX consistent: links, buttons and other actionable
+   controls will indicate that they're clickable.
+   We avoid forcing pointer on generic elements and respect disabled states. */
+@layer base {
+  a,
+  button,
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  [role="button"],
+  summary,
+  label[for] {
+    cursor: pointer;
+  }
+
+  /* If an element is disabled, show not-allowed for clarity. */
+  :where(button:disabled, [disabled]) {
+    cursor: not-allowed;
+  }
+}

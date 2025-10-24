@@ -147,7 +147,22 @@ export default function MemoriesPanel() {
           return (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filtered.map((m: any) => (
-                <Card key={m.id} className="hover:shadow-md transition">
+                <Card
+                  key={m.id}
+                  className="hover:shadow-md transition cursor-pointer"
+                  tabIndex={0}
+                  onClick={() => {
+                    setEditing(m);
+                    setEditorOpen(true);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setEditing(m);
+                      setEditorOpen(true);
+                    }
+                  }}
+                >
                   <CardHeader>
                     <CardTitle className="truncate">
                       {m.title || "Untitled"}
@@ -164,18 +179,6 @@ export default function MemoriesPanel() {
                         <Tag key={t}>{t}</Tag>
                       ))}
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          setEditing(m);
-                          setEditorOpen(true);
-                        }}
-                      >
-                        Open
-                      </Button>
-                    </div>
                   </CardFooter>
                 </Card>
               ))}
@@ -186,7 +189,22 @@ export default function MemoriesPanel() {
         return (
           <div className="space-y-3">
             {filtered.map((m: any) => (
-              <Card key={m.id} className="p-0">
+              <Card
+                key={m.id}
+                className="p-0 cursor-pointer"
+                tabIndex={0}
+                onClick={() => {
+                  setEditing(m);
+                  setEditorOpen(true);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setEditing(m);
+                    setEditorOpen(true);
+                  }
+                }}
+              >
                 <CardContent className="flex items-center justify-between">
                   <div>
                     <div className="font-medium">{m.title || "Untitled"}</div>
@@ -198,18 +216,6 @@ export default function MemoriesPanel() {
                         <Tag key={t}>{t}</Tag>
                       ))}
                     </div>
-                  </div>
-                  <div className="ml-4">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        setEditing(m);
-                        setEditorOpen(true);
-                      }}
-                    >
-                      Open
-                    </Button>
                   </div>
                 </CardContent>
               </Card>

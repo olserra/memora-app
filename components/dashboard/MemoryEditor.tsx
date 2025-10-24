@@ -69,10 +69,29 @@ export default function MemoryEditor({ memory, onClose, onSaved }: Props) {
       setSaving(false);
     }
   }
+  // close on Escape key
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
+    <div
+      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+      // close when clicking outside the dialog (overlay)
+      onPointerDown={(e) => {
+        // only close when the overlay itself was clicked (not children)
+        if (e.currentTarget === e.target) onClose();
+      }}
+    >
+      <div
+        className="bg-white rounded-lg p-6 w-full max-w-2xl"
+        // prevent clicks inside the dialog from bubbling to the overlay
+        onPointerDown={(e) => e.stopPropagation()}
+      >
         <h3 className="text-lg font-semibold mb-4">
           {memory ? "Edit Memory" : "Create Memory"}
         </h3>
