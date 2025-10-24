@@ -1,6 +1,5 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useRef, useState } from "react";
 
 type Msg = {
@@ -96,74 +95,67 @@ export default function ChatPanel() {
   }
 
   return (
-    <Card className="max-w-3xl mx-auto mt-8 h-[600px] flex flex-col">
-      <CardHeader>
-        <CardTitle>Chat</CardTitle>
-      </CardHeader>
-      <CardContent className="flex-1 flex flex-col p-0">
-        <div className="flex-1 overflow-hidden flex flex-col">
-          <div
-            ref={listRef}
-            className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50"
-          >
-            {messages.length === 0 && (
-              <div className="text-sm text-muted-foreground">
-                Ask something about your memories.
-              </div>
-            )}
-            {messages.map((m) => (
+    <div className="h-full flex flex-col">
+      <div className="flex-1 overflow-hidden flex flex-col">
+        <div
+          ref={listRef}
+          className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0"
+        >
+          {messages.length === 0 && (
+            <div className="text-sm text-muted-foreground">
+              Ask something about your memories.
+            </div>
+          )}
+          {messages.map((m) => (
+            <div
+              key={m.id}
+              className={`flex ${
+                m.role === "user" ? "justify-end" : "justify-start"
+              }`}
+            >
               <div
-                key={m.id}
-                className={`flex ${
-                  m.role === "user" ? "justify-end" : "justify-start"
+                className={`max-w-[80%] p-3 break-words ${
+                  m.role === "user"
+                    ? "bg-orange-200 text-black rounded-lg"
+                    : "bg-gray-100 rounded-lg"
                 }`}
               >
-                <div
-                  className={`max-w-[80%] p-3 rounded-lg break-words ${
-                    m.role === "user"
-                      ? "bg-blue-600 text-white"
-                      : "bg-white border"
-                  }`}
-                >
-                  <div className="whitespace-pre-wrap">{m.text}</div>
-                  <div className="text-xs text-muted-foreground mt-1 text-right">
-                    {m.time}
-                  </div>
+                <div className="whitespace-pre-wrap">{m.text}</div>
+                <div className="text-xs text-muted-foreground mt-1 text-right">
+                  {m.time}
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
+        </div>
 
-          <div className="border-t p-4 bg-white">
-            <label htmlFor="chat-input" className="sr-only">
-              Message
-            </label>
-            <div className="flex flex-col gap-3">
-              {errorMsg && (
-                <div className="text-sm text-red-600">{errorMsg}</div>
-              )}
-              <div className="flex gap-3">
-                <textarea
-                  id="chat-input"
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  onKeyDown={onKeyDown}
-                  placeholder="Write a message... (Enter to send, Shift+Enter for newline)"
-                  className="flex-1 min-h-[44px] max-h-48 resize-none rounded-md border px-3 py-2 focus:outline-none focus:ring"
-                />
-                <div className="flex items-end">
-                  <Button
-                    onClick={() => void sendMessage()}
-                    disabled={pending || !text.trim()}
-                  >
-                    {pending ? "Sending..." : "Send"}
-                  </Button>
-                </div>
+        <div className="p-4">
+          <label htmlFor="chat-input" className="sr-only">
+            Message
+          </label>
+          <div className="flex flex-col gap-3">
+            {errorMsg && <div className="text-sm text-red-600">{errorMsg}</div>}
+            <div className="flex gap-3">
+              <textarea
+                id="chat-input"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={onKeyDown}
+                placeholder="Write a message... (Enter to send, Shift+Enter for newline)"
+                className="flex-1 min-h-[44px] max-h-48 resize-none rounded-md border px-3 py-2 focus:outline-none focus:ring"
+              />
+              <div className="flex items-end">
+                <Button
+                  onClick={() => void sendMessage()}
+                  disabled={pending || !text.trim()}
+                >
+                  {pending ? "Sending..." : "Send"}
+                </Button>
               </div>
             </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
