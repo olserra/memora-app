@@ -48,7 +48,7 @@ try {
     for (const r of rows) {
       try {
         const vec = await fetchEmbedding(embedUrl, embedKey, r.content);
-        const vecStr = '[' + vec.join(',') + ']';
+        const vecStr = "[" + vec.join(",") + "]";
         // Parameterized update: pass the vector and the id as parameters.
         await client.unsafe(
           `UPDATE memories SET embedding = $1::vector WHERE id = $2`,

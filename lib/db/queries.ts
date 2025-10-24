@@ -42,7 +42,7 @@ export async function getNearestMemoriesForUser(
 ) {
   if (!vec || vec.length === 0) return [];
   // Convert the vector array to a string format expected by pgvector
-  const vecStr = '[' + vec.join(',') + ']';
+  const vecStr = "[" + vec.join(",") + "]";
   // Use a parameterized query: pass the vector as a parameter and cast to
   // `vector` in SQL. This avoids interpolating numeric values directly into
   // the SQL string.

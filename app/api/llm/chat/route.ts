@@ -213,18 +213,24 @@ export async function POST(req: NextRequest) {
     const extracted = await extractMemoryFromMessage(message);
     if (extracted) {
       try {
-        const inserted = await db.insert(memories).values({
-          userId: session.user.id,
-          title: extracted.content,
-          content: extracted.content,
-          category: "personal",
-          tags: JSON.stringify(extracted.tags),
-        }).returning({ id: memories.id });
+        const inserted = await db
+          .insert(memories)
+          .values({
+            userId: session.user.id,
+            title: extracted.content,
+            content: extracted.content,
+            category: "personal",
+            tags: JSON.stringify(extracted.tags),
+          })
+          .returning({ id: memories.id });
         if (inserted[0]) {
           const vec = await embedText(extracted.content);
           if (vec) {
-            const vecStr = '[' + vec.join(',') + ']';
-            await client.unsafe(`UPDATE memories SET embedding = $1::vector WHERE id = $2`, [vecStr, inserted[0].id]);
+            const vecStr = "[" + vec.join(",") + "]";
+            await client.unsafe(
+              `UPDATE memories SET embedding = $1::vector WHERE id = $2`,
+              [vecStr, inserted[0].id]
+            );
           }
         }
       } catch (memError) {
@@ -286,22 +292,31 @@ export async function POST(req: NextRequest) {
       if (memoryMatch) {
         const memoryContent = memoryMatch[1].trim();
         const tagsText = memoryMatch[2].trim();
-        const tags = tagsText.split(',').map((t) => t.trim()).filter(Boolean);
+        const tags = tagsText
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean);
         if (memoryContent) {
           try {
             // Create memory using internal DB call
-            const inserted = await db.insert(memories).values({
-              userId: session.user.id,
-              title: memoryContent,
-              content: memoryContent,
-              category: "general",
-              tags: JSON.stringify(tags),
-            }).returning({ id: memories.id });
+            const inserted = await db
+              .insert(memories)
+              .values({
+                userId: session.user.id,
+                title: memoryContent,
+                content: memoryContent,
+                category: "general",
+                tags: JSON.stringify(tags),
+              })
+              .returning({ id: memories.id });
             if (inserted[0]) {
               const vec = await embedText(memoryContent);
               if (vec) {
-                const vecStr = '[' + vec.join(',') + ']';
-                await client.unsafe(`UPDATE memories SET embedding = $1::vector WHERE id = $2`, [vecStr, inserted[0].id]);
+                const vecStr = "[" + vec.join(",") + "]";
+                await client.unsafe(
+                  `UPDATE memories SET embedding = $1::vector WHERE id = $2`,
+                  [vecStr, inserted[0].id]
+                );
               }
             }
           } catch (memError) {
