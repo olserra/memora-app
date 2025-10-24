@@ -8,7 +8,6 @@ import {
   MessageSquare,
   Settings,
   Shield,
-  Users,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -23,7 +22,6 @@ export default function DashboardLayout({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const navItems = [
-    { href: "/dashboard", icon: Users, label: "Profile" },
     { href: "/dashboard/chat", icon: MessageSquare, label: "Chat" },
     { href: "/dashboard/memories", icon: Bookmark, label: "Memories" },
     { href: "/dashboard/general", icon: Settings, label: "General" },

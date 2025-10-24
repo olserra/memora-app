@@ -1,15 +1,16 @@
-'use client';
+"use client";
 
-import { useActionState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Loader2 } from 'lucide-react';
-import { updateAccount } from '@/app/(login)/actions';
-import { User } from '@/lib/db/schema';
-import useSWR from 'swr';
-import { Suspense } from 'react';
+import { updateAccount } from "@/app/(login)/actions";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { User } from "@/lib/db/schema";
+import { customerPortalAction } from "@/lib/payments/actions";
+import { Loader2 } from "lucide-react";
+import { Suspense, useActionState } from "react";
+import { TbCrown } from "react-icons/tb";
+import useSWR from "swr";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -27,8 +28,8 @@ type AccountFormProps = {
 
 function AccountForm({
   state,
-  nameValue = '',
-  emailValue = ''
+  nameValue = "",
+  emailValue = "",
 }: AccountFormProps) {
   return (
     <>
@@ -62,12 +63,12 @@ function AccountForm({
 }
 
 function AccountFormWithData({ state }: { state: ActionState }) {
-  const { data: user } = useSWR<User>('/api/user', fetcher);
+  const { data: user } = useSWR<User>("/api/user", fetcher);
   return (
     <AccountForm
       state={state}
-      nameValue={user?.name ?? ''}
-      emailValue={user?.email ?? ''}
+      nameValue={user?.name ?? ""}
+      emailValue={user?.email ?? ""}
     />
   );
 }
@@ -83,6 +84,9 @@ export default function GeneralPage() {
       <h1 className="text-lg lg:text-2xl font-medium text-gray-900 mb-6">
         General Settings
       </h1>
+
+      {/* Subscription card moved from Profile */}
+      <SubscriptionCard />
 
       <Card>
         <CardHeader>
@@ -110,12 +114,52 @@ export default function GeneralPage() {
                   Saving...
                 </>
               ) : (
-                'Save Changes'
+                "Save Changes"
               )}
             </Button>
           </form>
         </CardContent>
       </Card>
     </section>
+  );
+}
+
+function SubscriptionCard() {
+  const { data: userData } = useSWR<any>("/api/user", fetcher);
+
+  return (
+    <Card className="mb-8">
+      <CardHeader>
+        <CardTitle>Your Subscription</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+            <div className="mb-4 sm:mb-0">
+              <p className="font-medium">
+                Current Plan: {userData?.planName || "Free"}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {(() => {
+                  const status = userData?.subscriptionStatus;
+                  if (status === "active") return "Billed monthly";
+                  if (status === "trialing") return "Trial period";
+                  return "No active subscription";
+                })()}
+              </p>
+            </div>
+            <form action={customerPortalAction}>
+              <Button
+                type="submit"
+                className="bg-orange-500 hover:bg-orange-600 text-white flex items-center gap-2"
+              >
+                <TbCrown className="h-4 w-4 text-white" />
+                Upgrade
+              </Button>
+            </form>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
