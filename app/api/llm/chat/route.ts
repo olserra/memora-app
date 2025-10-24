@@ -1,8 +1,10 @@
 import { getSession } from "@/lib/auth/session";
+import { db } from "@/lib/db/drizzle";
 import {
   getMemoriesGrouped,
   getNearestMemoriesForUser,
 } from "@/lib/db/queries";
+import { memories } from "@/lib/db/schema";
 import { NextRequest, NextResponse } from "next/server";
 
 type ChatRequest = { message: string };
@@ -24,17 +26,81 @@ function normalizeOutput(json: any) {
   return output;
 }
 
+async function extractMemoryFromMessage(message: string): Promise<string | null> {
+  const extractPrompt = `Analyze this user message and extract any personal information that should be saved as a memory.
+
+Return only the concise fact if there's something worth saving, otherwise return "NONE".
+
+Examples:
+Message: "My girlfriend is Carla"
+Extract: "User's girlfriend is named Carla"
+
+Message: "I love pizza"
+Extract: "User loves pizza"
+
+Message: "Hello how are you"
+Extract: "NONE"
+
+Message: "${message}"
+Extract:`;
+
+  try {
+    const output = await callLLM(extractPrompt);
+    const lines = output.trim().split('\n');
+    const extractLine = lines.find(line => line.startsWith('Extract:'));
+    if (extractLine) {
+      let cleaned = extractLine.replace('Extract:', '').trim();
+      // Remove surrounding quotes if present
+      cleaned = cleaned.replace(/^["']|["']$/g, '');
+      if (cleaned === "NONE" || cleaned === "" || cleaned.toLowerCase().includes("none")) {
+        return null;
+      }
+      return cleaned;
+    }
+    return null;
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.debug("Memory extraction failed", error);
+    return null;
+  }
+}
+
 function buildPromptFromMemories(memRows: any[], userQuestion: string) {
-  if (!memRows || memRows.length === 0) return userQuestion;
+  const baseInstructions = `You are a helpful assistant.
 
-  const chunks = memRows.map(
-    (r: any, i: number) => `Memory ${i + 1} (id:${r.id}): ${r.content}`
-  );
-  const context = chunks.join("\n---\n");
-  const prompt = `You are a helpful assistant that answers questions using only the user's memories provided below. If the answer is not contained in the memories, say you don't know.
+You MUST save new memories for ANY personal information the user shares. Look at the content and decide if it's worth remembering.
 
-Context:
-${context}
+**Always save:**
+- Names, relationships, preferences, facts about the user
+- Anything that could be useful to remember for future conversations
+
+**How to save:**
+Include [MEMORY: concise fact] in your response. Extract the key information.
+
+**Examples:**
+User: "My girlfriend is Carla"
+Assistant: "That's nice! [MEMORY: User's girlfriend is named Carla]"
+
+User: "I love hiking"
+Assistant: "Hiking is fun! [MEMORY: User loves hiking]"
+
+User: "I'm 25 years old"
+Assistant: "Cool! [MEMORY: User is 25 years old]"
+
+User: "Hello"
+Assistant: "Hi there!" (no memory)
+
+Save memories for relevant personal information.`;
+
+  let context = "";
+  if (memRows && memRows.length > 0) {
+    const chunks = memRows.map(
+      (r: any, i: number) => `Memory ${i + 1} (id:${r.id}): ${r.content}`
+    );
+    context = `\n\nExisting Memories:\n${chunks.join("\n---\n")}`;
+  }
+
+  const prompt = `${baseInstructions}${context}
 
 Question: ${userQuestion}`;
   return prompt;
@@ -119,11 +185,24 @@ export async function POST(req: NextRequest) {
     if (!session)
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
-    // Dev mock bypass
-    if (process.env.LLM_DEV_MOCK === "1") {
-      const mock = `(dev mock) I received your message: "${message}"`;
-      return NextResponse.json({ output: mock });
+    // Extract and save memory if any
+    const extractedMemory = await extractMemoryFromMessage(message);
+    if (extractedMemory) {
+      try {
+        await db.insert(memories).values({
+          userId: session.user.id,
+          title: extractedMemory,
+          content: extractedMemory,
+          category: "personal",
+          tags: JSON.stringify([]),
+        });
+      } catch (memError) {
+        // eslint-disable-next-line no-console
+        console.debug("Failed to save extracted memory", memError);
+      }
     }
+
+    // Dev mock bypass
 
     // If the user explicitly asks to list or show memories, fetch them
     // directly (no embedding required). This avoids returning a generic
@@ -168,7 +247,33 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-      const output = await callLLM(prompt);
+      let output = await callLLM(prompt);
+
+      // Check for memory saving marker
+      const memoryRegex = /\[MEMORY:\s*(.*?)\]/;
+      const memoryMatch = memoryRegex.exec(output);
+      if (memoryMatch) {
+        const memoryContent = memoryMatch[1].trim();
+        if (memoryContent) {
+          try {
+            // Create memory using internal DB call
+            await db.insert(memories).values({
+              userId: session.user.id,
+              title: null,
+              content: memoryContent,
+              category: "general",
+              tags: JSON.stringify([]),
+            });
+          } catch (memError) {
+            // Non-fatal, log but continue
+            // eslint-disable-next-line no-console
+            console.debug("Failed to save memory", memError);
+          }
+        }
+        // Remove the marker from the response
+        output = output.replace(memoryRegex, "").trim();
+      }
+
       return NextResponse.json({ output });
     } catch (err: any) {
       return NextResponse.json(
