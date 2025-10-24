@@ -63,6 +63,8 @@ async function embedText(text: string): Promise<number[] | undefined> {
     return undefined;
   }
   const j = await res.json();
+  if (Array.isArray(j) && typeof j[0] === "number")
+    return j as number[];
   if (Array.isArray(j.embedding) && typeof j.embedding[0] === "number")
     return j.embedding as number[];
   if (Array.isArray(j) && Array.isArray(j[0])) return j[0] as number[];
@@ -130,7 +132,9 @@ export async function POST(req: NextRequest) {
     let prompt = message;
     const listIntentRe =
       /\bwhat\s+memories\b|\bshow\s+my\s+memories\b|\blist\s+my\s+memories\b|\bmy\s+memories\b/i;
-    if (listIntentRe.test(message)) {
+    const knowAboutMeRe =
+      /\bwhat.*know.*about.*me\b|\bo que.*sabe.*sobre.*mim\b/i;
+    if (listIntentRe.test(message) || knowAboutMeRe.test(message)) {
       try {
         const grouped = await getMemoriesGrouped();
         // flatten grouped -> items
