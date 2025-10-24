@@ -41,6 +41,8 @@ export async function getNearestMemoriesForUser(
   limit = 5
 ) {
   if (!vec || vec.length === 0) return [];
+  // Convert the vector array to a string format expected by pgvector
+  const vecStr = '[' + vec.join(',') + ']';
   // Use a parameterized query: pass the vector as a parameter and cast to
   // `vector` in SQL. This avoids interpolating numeric values directly into
   // the SQL string.
@@ -49,7 +51,7 @@ export async function getNearestMemoriesForUser(
                WHERE user_id = $2 AND embedding IS NOT NULL
                ORDER BY distance
                LIMIT $3`;
-  const rows = await client.unsafe(sql, [vec, userId, limit]);
+  const rows = await client.unsafe(sql, [vecStr, userId, limit]);
   return rows as any[];
 }
 

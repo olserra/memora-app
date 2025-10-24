@@ -1,5 +1,5 @@
 import { getSession } from "@/lib/auth/session";
-import { db } from "@/lib/db/drizzle";
+import { client, db } from "@/lib/db/drizzle";
 import {
   getMemoriesGrouped,
   getNearestMemoriesForUser,
@@ -33,7 +33,7 @@ async function extractMemoryFromMessage(
 
 Return in this format:
 Extract: [concise fact]
-Tags: [tag1, tag2, tag3]
+Tags: [tag1, tag2, tag3] (always provide exactly 3 relevant tags)
 
 If no memory to save, return:
 Extract: NONE
@@ -41,11 +41,11 @@ Extract: NONE
 Examples:
 Message: "My girlfriend is Carla"
 Extract: User's girlfriend is named Carla
-Tags: relationship, personal
+Tags: relationship, personal, name
 
 Message: "I love hiking"
 Extract: User loves hiking
-Tags: hobby, interest
+Tags: hobby, interest, activity
 
 Message: "Hello how are you"
 Extract: NONE
@@ -99,17 +99,17 @@ You MUST save new memories for ANY personal information the user shares. Look at
 - Anything that could be useful to remember for future conversations
 
 **How to save:**
-Include [MEMORY: concise fact] in your response. Extract the key information.
+Include [MEMORY: concise fact | tag1, tag2, tag3] in your response. Extract the key information and provide exactly 3 relevant tags.
 
 **Examples:**
 User: "My girlfriend is Carla"
-Assistant: "That's nice! [MEMORY: User's girlfriend is named Carla]"
+Assistant: "That's nice! [MEMORY: User's girlfriend is named Carla | relationship, personal, name]"
 
 User: "I love hiking"
-Assistant: "Hiking is fun! [MEMORY: User loves hiking]"
+Assistant: "Hiking is fun! [MEMORY: User loves hiking | hobby, interest, activity]"
 
 User: "I'm 25 years old"
-Assistant: "Cool! [MEMORY: User is 25 years old]"
+Assistant: "Cool! [MEMORY: User is 25 years old | personal, age, fact]"
 
 User: "Hello"
 Assistant: "Hi there!" (no memory)
@@ -213,13 +213,20 @@ export async function POST(req: NextRequest) {
     const extracted = await extractMemoryFromMessage(message);
     if (extracted) {
       try {
-        await db.insert(memories).values({
+        const inserted = await db.insert(memories).values({
           userId: session.user.id,
           title: extracted.content,
           content: extracted.content,
           category: "personal",
           tags: JSON.stringify(extracted.tags),
-        });
+        }).returning({ id: memories.id });
+        if (inserted[0]) {
+          const vec = await embedText(extracted.content);
+          if (vec) {
+            const vecStr = '[' + vec.join(',') + ']';
+            await client.unsafe(`UPDATE memories SET embedding = $1::vector WHERE id = $2`, [vecStr, inserted[0].id]);
+          }
+        }
       } catch (memError) {
         // eslint-disable-next-line no-console
         console.debug("Failed to save extracted memory", memError);
@@ -274,20 +281,29 @@ export async function POST(req: NextRequest) {
       let output = await callLLM(prompt);
 
       // Check for memory saving marker
-      const memoryRegex = /\[MEMORY:\s*(.*?)\]/;
+      const memoryRegex = /\[MEMORY:\s*(.*?)\s*\|\s*(.*?)\]/;
       const memoryMatch = memoryRegex.exec(output);
       if (memoryMatch) {
         const memoryContent = memoryMatch[1].trim();
+        const tagsText = memoryMatch[2].trim();
+        const tags = tagsText.split(',').map((t) => t.trim()).filter(Boolean);
         if (memoryContent) {
           try {
             // Create memory using internal DB call
-            await db.insert(memories).values({
+            const inserted = await db.insert(memories).values({
               userId: session.user.id,
-              title: null,
+              title: memoryContent,
               content: memoryContent,
               category: "general",
-              tags: JSON.stringify([]),
-            });
+              tags: JSON.stringify(tags),
+            }).returning({ id: memories.id });
+            if (inserted[0]) {
+              const vec = await embedText(memoryContent);
+              if (vec) {
+                const vecStr = '[' + vec.join(',') + ']';
+                await client.unsafe(`UPDATE memories SET embedding = $1::vector WHERE id = $2`, [vecStr, inserted[0].id]);
+              }
+            }
           } catch (memError) {
             // Non-fatal, log but continue
             // eslint-disable-next-line no-console
