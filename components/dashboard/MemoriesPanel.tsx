@@ -232,6 +232,11 @@ export default function MemoriesPanel() {
                         </span>
                       )}
                     </div>
+                    {m.category && m.category !== "general" && (
+                      <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-xs font-medium flex-shrink-0">
+                        {m.category}
+                      </span>
+                    )}
                     <div className="flex items-center gap-1 text-xs text-gray-500 flex-shrink-0">
                       <Calendar className="w-3 h-3" />
                       {new Date(m.createdAt).toLocaleDateString("en-US", {
@@ -239,11 +244,6 @@ export default function MemoriesPanel() {
                         day: "numeric",
                       })}
                     </div>
-                    {m.category && m.category !== "general" && (
-                      <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-xs font-medium flex-shrink-0">
-                        {m.category}
-                      </span>
-                    )}
                   </div>
                 </div>
               </button>
