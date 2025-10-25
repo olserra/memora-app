@@ -65,19 +65,21 @@ export default function MemoriesPanel() {
 
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center border rounded-md px-4 py-2 gap-2 bg-white min-w-[300px]">
-            <Search className="w-4 h-4 text-gray-500" />
+      {/* Search centered with buttons below for a more harmonious layout */}
+      <div className="flex flex-col items-center gap-4 mb-6">
+        <div className="w-full flex justify-center">
+          <div className="flex items-center border rounded-lg px-4 py-3 gap-2 bg-white w-full max-w-3xl min-w-[280px]">
+            <Search className="w-5 h-5 text-gray-500" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search memories, tags or content"
-              className="outline-none text-sm flex-1"
+              className="outline-none text-base flex-1 py-0"
             />
           </div>
         </div>
-        <div className="flex items-center gap-3">
+
+        <div className="flex items-center gap-3 justify-center">
           <Button
             variant="ghost"
             onClick={() => {
