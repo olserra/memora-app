@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import {
   Activity,
   Bookmark,
-  Menu,
   MessageSquare,
   Settings,
   Shield,
@@ -31,20 +30,7 @@ export default function DashboardLayout({
 
   return (
     <div className="flex flex-col min-h-[calc(100dvh-68px)] max-w-7xl mx-auto w-full">
-      {/* Mobile header */}
-      <div className="lg:hidden flex items-center justify-between bg-white border-b border-gray-200 p-4">
-        <div className="flex items-center">
-          <span className="font-medium">Settings</span>
-        </div>
-        <Button
-          className="-mr-3"
-          variant="ghost"
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        >
-          <Menu className="h-6 w-6" />
-          <span className="sr-only">Toggle sidebar</span>
-        </Button>
-      </div>
+          {/* Mobile header removed - no duplicate 'Settings' navbar on small screens */}
 
       <div className="flex flex-1 overflow-hidden h-full">
         {/* Sidebar */}
