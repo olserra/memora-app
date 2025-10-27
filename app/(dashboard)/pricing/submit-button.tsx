@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { useFormStatus } from 'react-dom';
 
-export function SubmitButton() {
+export function SubmitButton({ className }: { className?: string }) {
   const { pending } = useFormStatus();
 
   return (
@@ -12,7 +12,7 @@ export function SubmitButton() {
       type="submit"
       disabled={pending}
       variant="outline"
-      className="w-full rounded-full"
+      className={`w-full rounded-full ${className || ''}`}
     >
       {pending ? (
         <>
