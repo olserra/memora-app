@@ -56,7 +56,7 @@ function UserMenu() {
         </div>
 
         <DropdownMenu>
-          <DropdownMenuTrigger>
+          <DropdownMenuTrigger asChild>
             <button
               aria-label="Open menu"
               className="p-2 rounded-md lg:hidden text-gray-700 hover:bg-gray-100"
@@ -99,15 +99,15 @@ function UserMenu() {
 
   return (
     <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-      <DropdownMenuTrigger>
+      <DropdownMenuTrigger asChild>
         {/* Show menu icon on mobile, avatar on desktop */}
         <div className="flex items-center">
-          <button
+          <span
             aria-label="Open menu"
-            className="p-2 rounded-md lg:hidden text-gray-700 hover:bg-gray-100"
+            className="p-2 rounded-md lg:hidden text-gray-700 hover:bg-gray-100 cursor-pointer"
           >
             <HiOutlineMenuAlt3 className="h-6 w-6" />
-          </button>
+          </span>
 
           <div className="hidden lg:block">
             <Avatar className="cursor-pointer size-9">
