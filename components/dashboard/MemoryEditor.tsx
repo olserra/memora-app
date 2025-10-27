@@ -1,5 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
+import { Calendar, Save, Tag, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 type Props = {
@@ -47,7 +48,6 @@ export default function MemoryEditor({ memory, onClose, onSaved }: Props) {
       onSaved();
       onClose();
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error(err);
     } finally {
       setSaving(false);
@@ -56,29 +56,28 @@ export default function MemoryEditor({ memory, onClose, onSaved }: Props) {
 
   async function remove() {
     if (!memory?.id) return;
-    if (!confirm("Delete this memory?")) return;
+    if (!confirm("Delete this memory? This action cannot be undone.")) return;
     setSaving(true);
     try {
       await fetch(`/api/memories/${memory.id}`, { method: "DELETE" });
       onSaved();
       onClose();
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error(err);
     } finally {
       setSaving(false);
     }
   }
-  // close on Escape key
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") save();
     }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [onClose, title, content, tagsStr]);
 
-  // prevent background scroll while modal is open
   useEffect(() => {
     if (typeof document === "undefined") return;
     const prev = document.body.style.overflow;
@@ -88,21 +87,21 @@ export default function MemoryEditor({ memory, onClose, onSaved }: Props) {
     };
   }, []);
 
+  const tagList = tagsStr
+    .split(",")
+    .map((t: string) => t.trim())
+    .filter(Boolean);
+
   return (
     <div
-      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
-      // close when clicking outside the dialog (overlay)
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 animate-in fade-in duration-200"
       onPointerDown={(e) => {
-        // only close when the overlay itself was clicked (not children)
         if (e.currentTarget === e.target) {
-          // prevent the click from propagating to elements underneath after unmount
           try {
             e.preventDefault();
             e.stopPropagation();
           } catch {}
-          // set a short-lived global flag to ignore the next click that might fall through
           try {
-            // @ts-ignore - attach a small guard to globalThis
             (globalThis as any).__memora_ignore_next_click = true;
             setTimeout(() => {
               (globalThis as any).__memora_ignore_next_click = false;
@@ -113,65 +112,149 @@ export default function MemoryEditor({ memory, onClose, onSaved }: Props) {
       }}
     >
       <div
-        className="bg-white rounded-lg p-6 w-full max-w-4xl mx-4 sm:mx-auto my-6 max-h-[calc(100vh-4rem)] overflow-auto"
-        // prevent clicks inside the dialog from bubbling to the overlay
+        className="bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-2xl sm:mx-4 max-h-[90vh] overflow-hidden flex flex-col animate-in slide-in-from-bottom sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200 mb-4 sm:mb-0"
         onPointerDown={(e) => e.stopPropagation()}
       >
-        <h3 className="text-lg font-semibold mb-4">
-          {memory ? "Edit Memory" : "Create Memory"}
-        </h3>
-        <div className="space-y-3">
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Title"
-            className="w-full rounded border px-3 py-2"
-          />
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="Content"
-            className="w-full rounded border px-3 py-2 min-h-[240px]"
-          />
-          <input
-            value={tagsStr}
-            onChange={(e) => setTagsStr(e.target.value)}
-            placeholder="Tags (comma separated, max 3)"
-            className="w-full rounded border px-3 py-2"
-          />
+        <div className="flex items-center justify-between p-6 border-b border-gray-100">
+          <h2 className="text-xl font-semibold text-gray-900">
+            {memory ? "Edit Memory" : "New Memory"}
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            disabled={saving}
+          >
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
         </div>
 
-        <div className="mt-4 flex items-center justify-between gap-4">
-          <div className="text-sm text-gray-500">
-            {memory?.createdAt || memory?.created_at ? (
-              <span>
-                Created: {formatDate(memory?.createdAt ?? memory?.created_at)}
-                {memory?.updatedAt || memory?.updated_at ? (
-                  <span>
-                    {" "}
-                    · Updated:{" "}
-                    {formatDate(memory?.updatedAt ?? memory?.updated_at)}
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          <label
+            htmlFor="title"
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
+            Title
+          </label>
+          <input
+            id="title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Give your memory a title..."
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all text-base"
+            disabled={saving}
+          />
+
+          <div>
+            <label
+              htmlFor="content"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Content
+            </label>
+            <textarea
+              id="content"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="What do you want to remember?"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all text-base resize-none"
+              rows={8}
+              disabled={saving}
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="tags"
+              className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2"
+            >
+              <Tag className="w-4 h-4" />
+              Tags
+            </label>
+            <input
+              id="tags"
+              value={tagsStr}
+              onChange={(e) => setTagsStr(e.target.value)}
+              placeholder="work, ideas, personal (max 3, comma separated)"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all text-base"
+              disabled={saving}
+            />
+            {tagList.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {tagList.slice(0, 3).map((tag: string, i: number) => (
+                  <span
+                    key={tag}
+                    className="text-xs bg-orange-50 text-orange-700 px-3 py-1.5 rounded-lg font-medium"
+                  >
+                    {tag}
                   </span>
-                ) : null}
-              </span>
-            ) : (
-              <span className="italic text-gray-400">Not saved yet</span>
+                ))}
+                {tagList.length > 3 && (
+                  <span className="text-xs text-gray-500 px-3 py-1.5">
+                    +{tagList.length - 3} more (only first 3 will be saved)
+                  </span>
+                )}
+              </div>
             )}
           </div>
 
+          {(memory?.createdAt || memory?.created_at) && (
+            <div className="pt-4 border-t border-gray-100">
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <Calendar className="w-4 h-4" />
+                <span>
+                  Created {formatDate(memory?.createdAt ?? memory?.created_at)}
+                  {memory?.updatedAt || memory?.updated_at ? (
+                    <span className="ml-2">
+                      · Updated{" "}
+                      {formatDate(memory?.updatedAt ?? memory?.updated_at)}
+                    </span>
+                  ) : null}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="p-6 border-t border-gray-100 flex items-center justify-between gap-3">
+          {memory ? (
+            <Button
+              variant="ghost"
+              onClick={remove}
+              disabled={saving}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete
+            </Button>
+          ) : (
+            <div />
+          )}
+
           <div className="flex items-center gap-2">
-            {memory && (
-              <Button variant="ghost" onClick={remove} disabled={saving}>
-                Delete
-              </Button>
-            )}
             <Button variant="ghost" onClick={onClose} disabled={saving}>
               Cancel
             </Button>
-            <Button onClick={save} disabled={saving}>
+            <Button
+              onClick={save}
+              disabled={saving}
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              <Save className="w-4 h-4 mr-2" />
               {saving ? "Saving..." : "Save"}
             </Button>
           </div>
+        </div>
+
+        <div className="px-6 pb-4 text-xs text-gray-400 text-center">
+          Press{" "}
+          <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-gray-600">
+            Esc
+          </kbd>{" "}
+          to cancel ·{" "}
+          <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-gray-600">
+            ⌘ Enter
+          </kbd>{" "}
+          to save
         </div>
       </div>
     </div>
@@ -183,7 +266,13 @@ function formatDate(val: any) {
   try {
     const d = new Date(val);
     if (Number.isNaN(d.getTime())) return String(val);
-    return d.toLocaleString();
+    return d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   } catch {
     return String(val);
   }

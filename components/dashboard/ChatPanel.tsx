@@ -1,5 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
+import { AlertCircle, Brain, Send, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 type Msg = {
@@ -22,12 +23,20 @@ export default function ChatPanel() {
   const [pending, setPending] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
-    // auto-scroll to bottom on new messages
     const el = listRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages]);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height =
+        textareaRef.current.scrollHeight + "px";
+    }
+  }, [text]);
 
   async function sendMessage() {
     const content = text.trim();
@@ -50,7 +59,6 @@ export default function ChatPanel() {
       });
       const json = await res.json();
       if (!res.ok) {
-        // surface server-side errors to the user
         setErrorMsg(json?.error || `Server returned ${res.status}`);
         const errMsg: Msg = {
           id: String(Date.now()) + "-e",
@@ -72,8 +80,6 @@ export default function ChatPanel() {
       };
       setMessages((m) => [...m, botMsg]);
     } catch (err) {
-      // log the error for diagnostics and show a friendly message
-      // eslint-disable-next-line no-console
       console.error("chat send error:", err);
       const errMsg: Msg = {
         id: String(Date.now()) + "-e",
@@ -95,63 +101,138 @@ export default function ChatPanel() {
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex-1 overflow-hidden flex flex-col">
-        <div
-          ref={listRef}
-          className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0"
-        >
-          {messages.length === 0 && (
-            <div className="text-sm text-muted-foreground">
-              Ask something about your memories.
+    <div className="flex flex-col h-full relative">
+      <div ref={listRef} className="flex-1 overflow-y-auto p-4 space-y-4 pb-32">
+        {messages.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-full text-center px-4 py-12">
+            <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
+              <Brain className="w-8 h-8 text-orange-600" />
             </div>
-          )}
-          {messages.map((m) => (
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Chat with Memora
+            </h3>
+            <p className="text-sm text-gray-500 max-w-sm">
+              Ask me anything about your memories. I can help you search,
+              organize, and recall information.
+            </p>
+            <div className="mt-6 grid gap-2 w-full max-w-sm">
+              {[
+                "What did I learn last week?",
+                "Show my work memories",
+                "Find ideas about design",
+              ].map((suggestion) => (
+                <button
+                  key={suggestion}
+                  onClick={() => setText(suggestion)}
+                  className="text-sm text-left px-4 py-3 bg-white border border-gray-200 rounded-xl hover:border-orange-500 hover:bg-orange-50 transition-all"
+                >
+                  <Sparkles className="w-4 h-4 inline mr-2 text-orange-600" />
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {messages.map((m) => (
+          <div
+            key={m.id}
+            className={`flex ${
+              m.role === "user" ? "justify-end" : "justify-start"
+            }`}
+          >
             <div
-              key={m.id}
-              className={`flex ${
-                m.role === "user" ? "justify-end" : "justify-start"
+              className={`max-w-[85%] sm:max-w-[75%] ${
+                m.role === "user"
+                  ? "bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-2xl rounded-tr-sm"
+                  : "bg-white border border-gray-200 rounded-2xl rounded-tl-sm"
               }`}
             >
-              <div
-                className={`max-w-[80%] p-3 break-words ${
-                  m.role === "user"
-                    ? "bg-orange-200 text-black rounded-lg"
-                    : "bg-gray-100 rounded-lg"
-                }`}
-              >
-                <div className="whitespace-pre-wrap">{m.text}</div>
-                <div className="text-xs text-muted-foreground mt-1 text-right">
+              {m.role === "assistant" && (
+                <div className="flex items-center gap-2 px-4 pt-3 pb-2 border-b border-gray-100">
+                  <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center">
+                    <Brain className="w-3.5 h-3.5 text-orange-600" />
+                  </div>
+                  <span className="text-xs font-medium text-gray-700">
+                    Memora
+                  </span>
+                </div>
+              )}
+              <div className="px-4 py-3">
+                <div
+                  className={`whitespace-pre-wrap text-sm leading-relaxed ${
+                    m.role === "user" ? "text-white" : "text-gray-900"
+                  }`}
+                >
+                  {m.text}
+                </div>
+                <div
+                  className={`text-xs mt-2 ${
+                    m.role === "user" ? "text-orange-100" : "text-gray-400"
+                  }`}
+                >
                   {m.time}
                 </div>
               </div>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
+        {pending && (
+          <div className="flex justify-start">
+            <div className="bg-white border border-gray-200 rounded-2xl rounded-tl-sm px-4 py-3">
+              <div className="flex items-center gap-2">
+                <div className="flex gap-1">
+                  <div
+                    className="w-2 h-2 bg-orange-500 rounded-full animate-bounce"
+                    style={{ animationDelay: "0ms" }}
+                  ></div>
+                  <div
+                    className="w-2 h-2 bg-orange-500 rounded-full animate-bounce"
+                    style={{ animationDelay: "150ms" }}
+                  ></div>
+                  <div
+                    className="w-2 h-2 bg-orange-500 rounded-full animate-bounce"
+                    style={{ animationDelay: "300ms" }}
+                  ></div>
+                </div>
+                <span className="text-xs text-gray-500">
+                  Memora is thinking...
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
-        <div className="p-4">
-          <label htmlFor="chat-input" className="sr-only">
-            Message
-          </label>
-          <div className="flex flex-col gap-3">
-            {errorMsg && <div className="text-sm text-red-600">{errorMsg}</div>}
-            <div className="flex gap-3">
+      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent">
+        <div className="max-w-3xl mx-auto">
+          {errorMsg && (
+            <div className="mb-3 px-4 py-3 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-red-900">Error</p>
+                <p className="text-sm text-red-700">{errorMsg}</p>
+              </div>
+            </div>
+          )}
+          <div className="bg-white border border-gray-300 rounded-3xl shadow-lg p-2">
+            <div className="flex gap-2 items-end">
               <textarea
-                id="chat-input"
+                ref={textareaRef}
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={onKeyDown}
-                placeholder="Write a message... (Enter to send, Shift+Enter for newline)"
-                className="flex-1 min-h-[44px] max-h-48 resize-none rounded-md border px-3 py-2 focus:outline-none focus:ring"
+                placeholder="Ask about your memories..."
+                className="flex-1 px-3 py-2 outline-none resize-none text-[15px] max-h-32 overflow-y-auto bg-transparent"
+                rows={1}
+                disabled={pending}
               />
-              <div className="flex items-end">
-                <Button
-                  onClick={() => void sendMessage()}
-                  disabled={pending || !text.trim()}
-                >
-                  {pending ? "Sending..." : "Send"}
-                </Button>
-              </div>
+              <Button
+                onClick={() => void sendMessage()}
+                disabled={pending || !text.trim()}
+                className="bg-orange-600 hover:bg-orange-700 text-white h-9 w-9 rounded-xl flex-shrink-0 p-0 disabled:opacity-50"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
             </div>
           </div>
         </div>
