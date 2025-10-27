@@ -65,10 +65,12 @@ export default function MemoriesPanel() {
 
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Search centered with buttons below for a more harmonious layout */}
-      <div className="flex flex-col items-center gap-4 mb-6">
-        <div className="w-full flex justify-center">
-          <div className="flex items-center border rounded-lg px-4 py-3 gap-2 bg-white w-full max-w-3xl min-w-[280px]">
+      {/* Responsive header: search + actions inline on md+, stacked on small screens.
+          On mobile we hide the explicit grid/list toggles and show only the + (icon) */}
+      <div className="w-full mb-6">
+        <div className="flex items-center gap-3 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Search: fill available space */}
+          <div className="flex items-center border rounded-lg px-3 py-2 gap-2 bg-white w-full max-w-3xl min-w-[180px]">
             <Search className="w-5 h-5 text-gray-500" />
             <input
               value={query}
@@ -76,32 +78,53 @@ export default function MemoriesPanel() {
               placeholder="Search memories, tags or content"
               className="outline-none text-base flex-1 py-0"
             />
-          </div>
-        </div>
 
-        <div className="flex items-center gap-3 justify-center">
-          <Button
-            variant="ghost"
-            onClick={() => {
-              setEditing(null);
-              setEditorOpen(true);
-            }}
-          >
-            <Plus className="mr-2 h-4 w-4" /> New Memory
-          </Button>
-          <div className="flex items-center gap-2">
+            {/* On small screens, show a compact + icon inside the search area */}
             <Button
-              variant={view === "grid" ? "secondary" : "ghost"}
-              onClick={() => setView("grid")}
+              variant="ghost"
+              className="md:hidden p-1"
+              onClick={() => {
+                setEditing(null);
+                setEditorOpen(true);
+              }}
+              aria-label="New memory"
             >
-              <Grid3X3 className="h-4 w-4" />
+              <Plus className="h-4 w-4" />
             </Button>
+          </div>
+
+          {/* Actions: on md+ show full actions inline to the right */}
+          <div className="ml-auto flex items-center gap-3">
             <Button
-              variant={view === "list" ? "secondary" : "ghost"}
-              onClick={() => setView("list")}
+              variant="ghost"
+              className="hidden md:inline-flex"
+              onClick={() => {
+                setEditing(null);
+                setEditorOpen(true);
+              }}
             >
-              <List className="h-4 w-4" />
+              <Plus className="mr-2 h-4 w-4" /> New Memory
             </Button>
+
+            {/* Grid/list toggles: hide on small screens */}
+            <div className="hidden md:flex items-center gap-2">
+              <Button
+                variant={view === "grid" ? "secondary" : "ghost"}
+                onClick={() => setView("grid")}
+                aria-pressed={view === "grid"}
+                aria-label="Grid view"
+              >
+                <Grid3X3 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={view === "list" ? "secondary" : "ghost"}
+                onClick={() => setView("list")}
+                aria-pressed={view === "list"}
+                aria-label="List view"
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
