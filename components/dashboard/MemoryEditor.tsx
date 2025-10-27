@@ -78,17 +78,42 @@ export default function MemoryEditor({ memory, onClose, onSaved }: Props) {
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
 
+  // prevent background scroll while modal is open
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev ?? "";
+    };
+  }, []);
+
   return (
     <div
       className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
       // close when clicking outside the dialog (overlay)
       onPointerDown={(e) => {
         // only close when the overlay itself was clicked (not children)
-        if (e.currentTarget === e.target) onClose();
+        if (e.currentTarget === e.target) {
+          // prevent the click from propagating to elements underneath after unmount
+          try {
+            e.preventDefault();
+            e.stopPropagation();
+          } catch {}
+          // set a short-lived global flag to ignore the next click that might fall through
+          try {
+            // @ts-ignore - attach a small guard to globalThis
+            (globalThis as any).__memora_ignore_next_click = true;
+            setTimeout(() => {
+              (globalThis as any).__memora_ignore_next_click = false;
+            }, 50);
+          } catch {}
+          onClose();
+        }
       }}
     >
       <div
-        className="bg-white rounded-lg p-6 w-full max-w-4xl"
+        className="bg-white rounded-lg p-6 w-full max-w-4xl mx-4 sm:mx-auto my-6 max-h-[calc(100vh-4rem)] overflow-auto"
         // prevent clicks inside the dialog from bubbling to the overlay
         onPointerDown={(e) => e.stopPropagation()}
       >
