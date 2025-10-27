@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { Button } from '@/components/ui/button';
-import { ArrowRight, Loader2 } from 'lucide-react';
-import { useFormStatus } from 'react-dom';
+import { Button } from "@/components/ui/button";
+import { ArrowRight, Loader2 } from "lucide-react";
+import { useFormStatus } from "react-dom";
 
 export function SubmitButton({ className }: { className?: string }) {
   const { pending } = useFormStatus();
@@ -12,7 +12,7 @@ export function SubmitButton({ className }: { className?: string }) {
       type="submit"
       disabled={pending}
       variant="outline"
-      className={`w-full rounded-full ${className || ''}`}
+      className={`w-full rounded-full ${className || ""}`}
     >
       {pending ? (
         <>
