@@ -170,23 +170,19 @@ export default function MemoriesPanel() {
           {filtered.map((m) => (
             <Card
               key={m.id}
-              className="hover:shadow-lg transition-all cursor-pointer border-0 shadow-sm hover:scale-[1.02] group"
+              className="hover:shadow-lg transition-all cursor-pointer border-0 shadow-sm hover:scale-[1.02] group h-full"
               onClick={() => {
                 if ((globalThis as any).__memora_ignore_next_click) return;
                 setEditing(m);
                 setEditorOpen(true);
               }}
             >
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between mb-3">
-                  <FileText className="w-4 h-4 text-gray-300 flex-shrink-0 ml-2" />
-                </div>
-
-                <p className="text-sm text-gray-600 line-clamp-4 mb-4 leading-relaxed">
+              <CardContent className="p-5 flex flex-col h-full">
+                <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed pb-2">
                   {m.content}
                 </p>
 
-                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                <div className="flex items-center justify-between pt-3 border-t border-gray-100 mt-auto">
                   <div className="flex flex-wrap gap-1.5">
                     {(m.tags || []).slice(0, 2).map((t: string) => (
                       <MemoryTag key={t}>{t}</MemoryTag>
