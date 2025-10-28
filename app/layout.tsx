@@ -8,7 +8,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Memora - Your Personal Memory Assistant",
   description: "Never forget anything again with Memora.",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+  ),
   openGraph: {
     images: "/metadata-img.png",
   },
