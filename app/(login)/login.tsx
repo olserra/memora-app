@@ -112,9 +112,7 @@ function GoogleSignInButton() {
     <Button
       type="button"
       className="w-full flex justify-center items-center py-2 px-4 border border-gray-300 rounded-full shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 mb-2"
-      onClick={() =>
-        (globalThis.location.href = "/api/auth/signin/google")
-      }
+      onClick={() => (globalThis.location.href = "/api/auth/signin/google")}
     >
       <Image
         src="/google.png"
