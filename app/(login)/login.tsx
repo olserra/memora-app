@@ -113,7 +113,7 @@ function GoogleSignInButton() {
       type="button"
       className="w-full flex justify-center items-center py-2 px-4 border border-gray-300 rounded-full shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 mb-2"
       onClick={() =>
-        (window.location.href = "/api/auth/signin?provider=google")
+        (globalThis.location.href = "/api/auth/signin/google")
       }
     >
       <Image
@@ -168,7 +168,7 @@ export function Login({ mode = "signin" }: { mode?: "signin" | "signup" }) {
       }
 
       // On success, redirect to dashboard
-      window.location.href = "/dashboard";
+      globalThis.location.href = "/dashboard";
     } catch (err) {
       setState({ error: "Network error" });
       setPending(false);
@@ -248,7 +248,7 @@ export function Login({ mode = "signin" }: { mode?: "signin" | "signup" }) {
                 ? "Create an account"
                 : "Sign in to existing account"}
             </Link>
-            {/* <GoogleSignInButton /> */}
+            <GoogleSignInButton />
           </div>
         </div>
       </div>
