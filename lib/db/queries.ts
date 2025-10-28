@@ -33,7 +33,7 @@ export async function getMemoriesGrouped() {
  * Retrieve nearest memories for a given user by vector similarity using the
  * low-level `client.unsafe` call. This centralizes the retrieval logic used
  * by the chat handler and scripts. Returns an array of rows with at least
- * { id, title, content, user_id, distance } fields when embedding exists.
+ * { id, content, user_id, distance } fields when embedding exists.
  */
 export async function getNearestMemoriesForUser(
   userId: number,
@@ -46,7 +46,7 @@ export async function getNearestMemoriesForUser(
   // Use a parameterized query: pass the vector as a parameter and cast to
   // `vector` in SQL. This avoids interpolating numeric values directly into
   // the SQL string.
-  const sql = `SELECT id, title, content, user_id, (embedding <-> $1::vector) AS distance
+  const sql = `SELECT id, content, user_id, (embedding <-> $1::vector) AS distance
                FROM memories
                WHERE user_id = $2 AND embedding IS NOT NULL
                ORDER BY distance

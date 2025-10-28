@@ -53,14 +53,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
     const body = await req.json();
-    const { title, content, category, tags } = body || {};
+    const { content, category, tags } = body || {};
 
     // B2C app: ignore teamId, use user context only
     // allow dev fallback via env or on DB errors
     if (process.env.USE_LOCAL_MEMORIES === "1") {
       const mem = await dev.createMemory({
         userId: user.id,
-        title: title || null,
         content: content || "",
         category: category || "general",
         tags: Array.isArray(tags) ? tags.slice(0, 3) : [],
@@ -73,7 +72,6 @@ export async function POST(req: Request) {
         .insert(memories)
         .values({
           userId: user.id,
-          title: title || null,
           content: content || "",
           category: category || "general",
           tags: tags ? JSON.stringify(tags.slice(0, 3)) : JSON.stringify([]),
@@ -144,7 +142,6 @@ export async function POST(req: Request) {
       console.debug("DB insert failed, falling back to dev store", error_);
       const mem = await dev.createMemory({
         userId: user.id,
-        title: title || null,
         content: content || "",
         category: category || "general",
         tags: Array.isArray(tags) ? tags.slice(0, 3) : [],

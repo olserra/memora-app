@@ -179,13 +179,10 @@ export default function MemoriesPanel() {
             >
               <CardContent className="p-5">
                 <div className="flex items-start justify-between mb-3">
-                  <h3 className="text-base font-semibold text-gray-900 line-clamp-2 flex-1 group-hover:text-orange-600 transition-colors">
-                    {m.title || "Untitled"}
-                  </h3>
                   <FileText className="w-4 h-4 text-gray-300 flex-shrink-0 ml-2" />
                 </div>
 
-                <p className="text-sm text-gray-600 line-clamp-3 mb-4 leading-relaxed">
+                <p className="text-sm text-gray-600 line-clamp-4 mb-4 leading-relaxed">
                   {m.content}
                 </p>
 
@@ -231,9 +228,6 @@ export default function MemoriesPanel() {
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-1">
-                    <h3 className="text-sm font-semibold text-gray-900 truncate group-hover:text-orange-600 transition-colors">
-                      {m.title || "Untitled"}
-                    </h3>
                     {m.category && m.category !== "general" && (
                       <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-md text-xs font-medium flex-shrink-0">
                         {m.category}

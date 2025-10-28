@@ -254,7 +254,6 @@ export async function POST(req: NextRequest) {
               .insert(memories)
               .values({
                 userId: session.user.id,
-                title: memoryContent,
                 content: memoryContent,
                 category: "personal",
                 tags: JSON.stringify(tags),

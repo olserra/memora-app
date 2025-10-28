@@ -10,13 +10,11 @@ type Props = {
 };
 
 export default function MemoryEditor({ memory, onClose, onSaved }: Props) {
-  const [title, setTitle] = useState(memory?.title || "");
   const [content, setContent] = useState(memory?.content || "");
   const [tagsStr, setTagsStr] = useState((memory?.tags || []).join(", "));
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    setTitle(memory?.title || "");
     setContent(memory?.content || "");
     setTagsStr((memory?.tags || []).join(", "));
   }, [memory]);
@@ -30,7 +28,7 @@ export default function MemoryEditor({ memory, onClose, onSaved }: Props) {
         .filter(Boolean)
         .slice(0, 3);
 
-      const payload = { title, content, tags };
+      const payload = { content, tags };
       if (memory?.id) {
         await fetch(`/api/memories/${memory.id}`, {
           method: "PUT",
@@ -76,7 +74,7 @@ export default function MemoryEditor({ memory, onClose, onSaved }: Props) {
     }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [onClose, title, content, tagsStr]);
+  }, [onClose, content, tagsStr]);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -129,21 +127,6 @@ export default function MemoryEditor({ memory, onClose, onSaved }: Props) {
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
-          <label
-            htmlFor="title"
-            className="block text-sm font-medium text-gray-700 mb-2"
-          >
-            Title
-          </label>
-          <input
-            id="title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Give your memory a title..."
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all text-base"
-            disabled={saving}
-          />
-
           <div>
             <label
               htmlFor="content"

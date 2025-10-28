@@ -63,7 +63,6 @@ async function run() {
       for (const m of data) {
         await db.insert(memories).values({
           userId: user.id,
-          title: m.title || null,
           content: m.content || "",
           tags: JSON.stringify(m.tags || []),
           category: m.category || "general",

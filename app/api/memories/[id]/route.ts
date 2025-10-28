@@ -13,12 +13,11 @@ export async function PUT(req: NextRequest, { params }: any) {
 
     const id = Number(params.id);
     const body = await req.json();
-    const { title, content, category, tags } = body || {};
+    const { content, category, tags } = body || {};
 
     // B2C app: don't require team membership; rely on user context
     if (process.env.USE_LOCAL_MEMORIES === "1") {
       const updated = await dev.updateMemory(id, {
-        title: title ?? null,
         content: content ?? "",
         category: category ?? "general",
         tags: Array.isArray(tags) ? tags.slice(0, 3) : [],
@@ -34,7 +33,6 @@ export async function PUT(req: NextRequest, { params }: any) {
       const [updated] = await db
         .update(memories)
         .set({
-          title: title ?? null,
           content: content ?? "",
           category: category ?? "general",
           tags: tags ? JSON.stringify(tags.slice(0, 3)) : JSON.stringify([]),
@@ -48,7 +46,6 @@ export async function PUT(req: NextRequest, { params }: any) {
       // eslint-disable-next-line no-console
       console.debug("DB update failed, falling back to dev store", error_);
       const updated = await dev.updateMemory(id, {
-        title: title ?? null,
         content: content ?? "",
         category: category ?? "general",
         tags: Array.isArray(tags) ? tags.slice(0, 3) : [],

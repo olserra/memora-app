@@ -6,7 +6,6 @@ const STORAGE = path.join(process.cwd(), "dev-memories.json");
 type Memory = {
   id: number;
   userId: number;
-  title?: string | null;
   content: string;
   tags: string[];
   category: string;
@@ -47,7 +46,6 @@ export async function createMemory(data: Partial<Memory>): Promise<Memory> {
   const mem: Memory = {
     id,
     userId: data.userId ?? 1,
-    title: data.title ?? null,
     content: data.content ?? "",
     tags: Array.isArray(data.tags) ? data.tags.slice(0, 3) : [],
     category: data.category ?? "general",
@@ -68,7 +66,6 @@ export async function updateMemory(
   const existing = items[idx];
   const updated: Memory = {
     ...existing,
-    title: data.title ?? existing.title,
     content: data.content ?? existing.content,
     tags: Array.isArray(data.tags) ? data.tags.slice(0, 3) : existing.tags,
     category: data.category ?? existing.category,

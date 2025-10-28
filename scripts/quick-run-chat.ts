@@ -44,7 +44,7 @@ async function retrieveTopMemoriesForUser(
   vec: number[],
   limit = 5
 ) {
-  const sql = `SELECT id, title, content, user_id, (embedding <-> $1::vector) AS distance
+  const sql = `SELECT id, content, user_id, (embedding <-> $1::vector) AS distance
                FROM memories
                WHERE user_id = $2 AND embedding IS NOT NULL
                ORDER BY distance
@@ -118,7 +118,7 @@ async function main() {
   const rows = await retrieveTopMemoriesForUser(userId, vec, 5);
   console.log(
     "Retrieved memories:",
-    rows.map((r) => ({ id: r.id, title: r.title }))
+    rows.map((r) => ({ id: r.id, content: r.content }))
   );
 
   const prompt = buildPromptFromMemories(rows, question);
