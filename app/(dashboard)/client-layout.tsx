@@ -14,7 +14,6 @@ import {
   Activity,
   Bookmark,
   CircleIcon,
-  Home,
   LogOut,
   MessageSquare,
   Settings,
@@ -124,21 +123,12 @@ function UserMenu() {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="flex flex-col gap-1 w-56">
-        {/* Dashboard link (desktop only) */}
-        <DropdownMenuItem className="hidden lg:flex cursor-pointer">
-          <Link
-            href="/dashboard"
-            onClick={() => setIsMenuOpen(false)}
-            className="flex w-full items-center"
-          >
-            <Home className="mr-2 h-4 w-4" />
-            <span>Dashboard</span>
-          </Link>
-        </DropdownMenuItem>
-
         {/* Sidebar nav items */}
         {navItems.map((item) => (
-          <DropdownMenuItem key={item.href} className="cursor-pointer">
+          <DropdownMenuItem
+            key={item.href}
+            className="lg:hidden cursor-pointer"
+          >
             <Link
               href={item.href}
               onClick={() => setIsMenuOpen(false)}
