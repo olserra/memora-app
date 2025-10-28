@@ -85,10 +85,10 @@ export default function GeneralPage() {
       <SubscriptionCard />
 
       <Card>
-        <CardHeader>
+        <CardHeader className="pt-6">
           <CardTitle>Account Information</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="py-6">
           <form className="space-y-4" action={formAction}>
             <Suspense fallback={<AccountForm state={state} />}>
               <AccountFormWithData state={state} />
@@ -125,10 +125,10 @@ function SubscriptionCard() {
 
   return (
     <Card className="mb-8">
-      <CardHeader>
+      <CardHeader className="pt-6">
         <CardTitle>Your Subscription</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="py-6">
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
             <div className="mb-4 sm:mb-0">
