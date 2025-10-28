@@ -3,6 +3,7 @@ import { compare, hash } from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { randomBytes } from "node:crypto";
+import { cache } from "react";
 
 // Ensure we have a non-empty secret to sign tokens with. jose (used by SignJWT)
 // will throw a "Zero-length key is not supported" error when given an empty
@@ -70,11 +71,11 @@ export async function verifyToken(input: string) {
   return payload as SessionData;
 }
 
-export async function getSession() {
+export const getSession = cache(async () => {
   const session = (await cookies()).get("session")?.value;
   if (!session) return null;
   return await verifyToken(session);
-}
+});
 
 export async function setSession(user: NewUser) {
   const expiresInOneDay = new Date(Date.now() + 24 * 60 * 60 * 1000);

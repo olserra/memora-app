@@ -1,11 +1,10 @@
-import type { NextConfig } from 'next';
+import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  cacheComponents: true,
   experimental: {
-    ppr: true,
     clientSegmentCache: true,
-    nodeMiddleware: true
-  }
+  },
 };
 
 export default nextConfig;
