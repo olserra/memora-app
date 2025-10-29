@@ -38,21 +38,21 @@ export async function getMemoriesGrouped() {
 export async function getNearestMemoriesForUser(
   userId: number,
   vec: number[],
-  limit = 5
+  limit = 10
 ) {
   if (!vec || vec.length === 0) return [];
-  // Convert the vector array to a string format expected by pgvector
   const vecStr = "[" + vec.join(",") + "]";
-  // Use a parameterized query: pass the vector as a parameter and cast to
-  // `vector` in SQL. This avoids interpolating numeric values directly into
-  // the SQL string.
-  const sql = `SELECT id, content, user_id, (embedding <-> $1::vector) AS distance
+
+  const sql = `SELECT id, content, user_id, category, tags,
+               1 - (embedding <=> $1::vector) AS distance
                FROM memories
                WHERE user_id = $2 AND embedding IS NOT NULL
-               ORDER BY distance
+               ORDER BY embedding <=> $1::vector
                LIMIT $3`;
+
   const rows = await client.unsafe(sql, [vecStr, userId, limit]);
-  return rows as any[];
+
+  return (rows as any[]).filter((r: any) => r.distance > 0.65);
 }
 
 export async function getUser() {

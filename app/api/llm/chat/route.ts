@@ -68,6 +68,24 @@ async function embedText(text: string): Promise<number[] | undefined> {
   return undefined;
 }
 
+async function checkDuplicate(
+  userId: number,
+  content: string,
+  vec?: number[]
+): Promise<boolean> {
+  if (!vec) return false;
+  try {
+    const similar = await getNearestMemoriesForUser(userId, vec, 1);
+    if (similar?.[0]) {
+      const distance = similar[0].distance ?? 1;
+      return distance < 0.15;
+    }
+  } catch (err) {
+    console.debug("Duplicate check failed", err);
+  }
+  return false;
+}
+
 async function callLLM(prompt: string, userName?: string | null) {
   const llmUrl = process.env.LLM_API_URL;
   const llmKey = process.env.LLM_API_KEY || process.env.HUGGING_FACE_TOKEN;
@@ -246,6 +264,12 @@ export async function POST(req: NextRequest) {
           .map((t) => t.trim())
           .filter(Boolean)
           .slice(0, 3);
+
+        const memVec = await embedText(memoryContent);
+        if (memVec && (await checkDuplicate(user.id, memoryContent, memVec))) {
+          console.debug("Skipping duplicate memory:", memoryContent);
+          continue;
+        }
 
         if (memoryContent && memoryContent.length >= 10) {
           console.debug("Attempting to save memory:", memoryContent, tags);
