@@ -210,9 +210,19 @@ export async function POST(req: NextRequest) {
     let prompt = message;
     const listIntentRe =
       /\bwhat\s+memories\b|\bshow\s+my\s+memories\b|\blist\s+my\s+memories\b|\bmy\s+memories\b/i;
-    const knowAboutMeRe =
-      /\bwhat.*know.*about.*me\b|\bo que.*sabe.*sobre.*mim\b/i;
-    if (listIntentRe.test(message) || knowAboutMeRe.test(message)) {
+    const knowAboutMeRes = [
+      /\bwhat.*know.*about.*me\b/i,
+      /\bo que.*sabe.*sobre.*mim\b/i,
+      /\bwhat.*do.*i.*like\b/i,
+      /\bo que.*gosto\b/i,
+      /\bwhat.*my.*favorite\b/i,
+      /\bqual.*meu.*favorito\b/i,
+    ];
+
+    if (
+      listIntentRe.test(message) ||
+      knowAboutMeRes.some((re) => re.test(message))
+    ) {
       try {
         const grouped = await getMemoriesGrouped();
         const items: any[] = [];
