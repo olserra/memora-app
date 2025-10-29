@@ -24,7 +24,7 @@ export default function HomePage() {
       .then((res) => res.json())
       .then((user) => {
         if (user) {
-          router.push("/memories");
+          router.push("/dashboard/memories");
         }
       })
       .catch(() => {
