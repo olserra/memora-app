@@ -101,7 +101,7 @@ export default function ChatPanel() {
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col h-screen">
+    <div className="fixed top-16 left-0 right-0 bottom-0 top-16 flex flex-col h-screen">
       <div ref={listRef} className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center px-4 py-12">
