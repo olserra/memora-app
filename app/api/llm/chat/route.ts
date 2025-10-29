@@ -7,6 +7,7 @@ import {
 } from "@/lib/db/queries";
 import { memories } from "@/lib/db/schema";
 import { NextRequest, NextResponse } from "next/server";
+import { eq, and } from "drizzle-orm";
 
 type ChatRequest = { message: string };
 
@@ -264,6 +265,21 @@ export async function POST(req: NextRequest) {
           .map((t) => t.trim())
           .filter(Boolean)
           .slice(0, 3);
+
+        // Check for exact duplicate content
+        try {
+          const existing = await db
+            .select()
+            .from(memories)
+            .where(and(eq(memories.userId, session.user.id), eq(memories.content, memoryContent)))
+            .limit(1);
+          if (existing.length > 0) {
+            console.debug("Skipping exact duplicate memory:", memoryContent);
+            continue;
+          }
+        } catch (err) {
+          console.debug("Exact duplicate check failed", err);
+        }
 
         const memVec = await embedText(memoryContent);
         if (memVec && (await checkDuplicate(user.id, memoryContent, memVec))) {

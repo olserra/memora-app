@@ -53,7 +53,13 @@ export default function MemoryEditor({ memory, onClose, onSaved }: Props) {
   }
 
   async function remove() {
-    if (!memory?.id) return;
+    if (
+      !memory?.id ||
+      typeof memory.id !== "number" ||
+      Number.isNaN(memory.id) ||
+      memory.id <= 0
+    )
+      return;
     if (!confirm("Delete this memory? This action cannot be undone.")) return;
     setSaving(true);
     try {

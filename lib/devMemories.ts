@@ -41,7 +41,10 @@ export async function getMemory(id: number): Promise<Memory | null> {
 
 export async function createMemory(data: Partial<Memory>): Promise<Memory> {
   const items = await readAll();
-  const id = items.length === 0 ? 1 : Math.max(...items.map((i) => i.id)) + 1;
+  const validIds = items
+    .map((i) => i.id)
+    .filter((n) => typeof n === "number" && !Number.isNaN(n) && n > 0);
+  const id = validIds.length === 0 ? 1 : Math.max(...validIds) + 1;
   const now = new Date().toISOString();
   const mem: Memory = {
     id,

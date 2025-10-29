@@ -11,7 +11,11 @@ export async function PUT(req: NextRequest, { params }: any) {
     if (!user)
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
-    const id = Number(params.id);
+    const { id: idParam } = await params;
+    const id = Number(idParam);
+    if (Number.isNaN(id) || id <= 0) {
+      return NextResponse.json({ error: "Invalid memory ID" }, { status: 400 });
+    }
     const body = await req.json();
     const { content, category, tags } = body || {};
 
@@ -70,7 +74,11 @@ export async function DELETE(_req: NextRequest, { params }: any) {
     if (!user)
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
-    const id = Number(params.id);
+    const { id: idParam } = await params;
+    const id = Number(idParam);
+    if (Number.isNaN(id) || id <= 0) {
+      return NextResponse.json({ error: "Invalid memory ID" }, { status: 400 });
+    }
     if (process.env.USE_LOCAL_MEMORIES === "1") {
       const ok = await dev.deleteMemory(id);
       return NextResponse.json({ ok });
