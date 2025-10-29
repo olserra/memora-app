@@ -12,10 +12,25 @@ import {
   Zap,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 
 export default function HomePage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    fetch('/api/user')
+      .then(res => res.json())
+      .then(user => {
+        if (user) {
+          router.push('/memories');
+        }
+      })
+      .catch(() => {
+        // ignore errors
+      });
+  }, [router]);
 
   return (
     <main className="bg-white">
