@@ -60,34 +60,40 @@ export default function ChatPanel() {
       const json = await res.json();
       if (!res.ok) {
         setErrorMsg(json?.error || `Server returned ${res.status}`);
-        const errMsg: Msg = {
-          id: String(Date.now()) + "-e",
-          role: "assistant",
-          text: "(error)",
-          time: now(),
-        };
-        setMessages((m) => [...m, errMsg]);
+        setMessages((m) => [
+          ...m,
+          {
+            id: String(Date.now()) + "-e",
+            role: "assistant",
+            text: "(error)",
+            time: now(),
+          },
+        ]);
         return;
       }
 
       setErrorMsg(null);
       const replyText = json.output || json.error || "(no response)";
-      const botMsg: Msg = {
-        id: String(Date.now()) + "-b",
-        role: "assistant",
-        text: replyText,
-        time: now(),
-      };
-      setMessages((m) => [...m, botMsg]);
+      setMessages((m) => [
+        ...m,
+        {
+          id: String(Date.now()) + "-b",
+          role: "assistant",
+          text: replyText,
+          time: now(),
+        },
+      ]);
     } catch (err) {
       console.error("chat send error:", err);
-      const errMsg: Msg = {
-        id: String(Date.now()) + "-e",
-        role: "assistant",
-        text: "Chat error",
-        time: now(),
-      };
-      setMessages((m) => [...m, errMsg]);
+      setMessages((m) => [
+        ...m,
+        {
+          id: String(Date.now()) + "-e",
+          role: "assistant",
+          text: "Chat error",
+          time: now(),
+        },
+      ]);
     } finally {
       setPending(false);
     }
@@ -101,110 +107,125 @@ export default function ChatPanel() {
   }
 
   return (
-    <div className="fixed top-16 left-0 right-0 bottom-0 top-16 flex flex-col h-screen">
-      <div ref={listRef} className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-center px-4 py-12">
-            <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
-              <Brain className="w-8 h-8 text-orange-600" />
+    <div
+      className="
+        fixed
+        top-[var(--header-height,4rem)]
+        bottom-0
+        left-0
+        right-0
+        lg:left-[var(--sidebar-width,16rem)]
+        flex flex-col
+        bg-gray-50
+        overflow-hidden
+        h-[calc(100vh-var(--header-height,4rem))]
+      "
+    >
+      <div
+        ref={listRef}
+        className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 space-y-4 scroll-smooth"
+      >
+        <div className="max-w-3xl mx-auto w-full pt-6 pb-24">
+          {messages.length === 0 && (
+            <div className="flex flex-col items-center justify-center h-[60vh] text-center px-4">
+              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
+                <Brain className="w-8 h-8 text-orange-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Chat with Memora
+              </h3>
+              <p className="text-sm text-gray-500 max-w-sm">
+                Ask me anything about your memories. I can help you search,
+                organize, and recall information.
+              </p>
+              <div className="mt-6 grid gap-2 w-full max-w-sm">
+                {[
+                  "What did I learn last week?",
+                  "Show my work memories",
+                  "Find ideas about design",
+                ].map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    onClick={() => setText(suggestion)}
+                    className="text-sm text-left px-4 py-3 bg-white border border-gray-200 rounded-xl hover:border-orange-500 hover:bg-orange-50 transition-all"
+                  >
+                    <Sparkles className="w-4 h-4 inline mr-2 text-orange-600" />
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Chat with Memora
-            </h3>
-            <p className="text-sm text-gray-500 max-w-sm">
-              Ask me anything about your memories. I can help you search,
-              organize, and recall information.
-            </p>
-            <div className="mt-6 grid gap-2 w-full max-w-sm">
-              {[
-                "What did I learn last week?",
-                "Show my work memories",
-                "Find ideas about design",
-              ].map((suggestion) => (
-                <button
-                  key={suggestion}
-                  onClick={() => setText(suggestion)}
-                  className="text-sm text-left px-4 py-3 bg-white border border-gray-200 rounded-xl hover:border-orange-500 hover:bg-orange-50 transition-all"
-                >
-                  <Sparkles className="w-4 h-4 inline mr-2 text-orange-600" />
-                  {suggestion}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        {messages.map((m) => (
-          <div
-            key={m.id}
-            className={`flex ${
-              m.role === "user" ? "justify-end" : "justify-start"
-            }`}
-          >
+          )}
+
+          {messages.map((m) => (
             <div
-              className={`max-w-[85%] sm:max-w-[75%] ${
-                m.role === "user"
-                  ? "bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-2xl rounded-tr-sm"
-                  : "bg-white border border-gray-200 rounded-2xl rounded-tl-sm"
+              key={m.id}
+              className={`flex ${
+                m.role === "user" ? "justify-end" : "justify-start"
               }`}
             >
-              {m.role === "assistant" && (
-                <div className="flex items-center gap-2 px-4 pt-3 pb-2 border-b border-gray-100">
-                  <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center">
-                    <Brain className="w-3.5 h-3.5 text-orange-600" />
+              <div
+                className={`max-w-[85%] sm:max-w-[75%] ${
+                  m.role === "user"
+                    ? "bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-2xl rounded-tr-sm"
+                    : "bg-white border border-gray-200 rounded-2xl rounded-tl-sm"
+                }`}
+              >
+                {m.role === "assistant" && (
+                  <div className="flex items-center gap-2 px-4 pt-3 pb-2 border-b border-gray-100">
+                    <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center">
+                      <Brain className="w-3.5 h-3.5 text-orange-600" />
+                    </div>
+                    <span className="text-xs font-medium text-gray-700">
+                      Memora
+                    </span>
                   </div>
-                  <span className="text-xs font-medium text-gray-700">
-                    Memora
+                )}
+                <div className="px-4 py-3">
+                  <div
+                    className={`whitespace-pre-wrap text-sm leading-relaxed ${
+                      m.role === "user" ? "text-white" : "text-gray-900"
+                    }`}
+                  >
+                    {m.text}
+                  </div>
+                  <div
+                    className={`text-xs mt-2 ${
+                      m.role === "user" ? "text-orange-100" : "text-gray-400"
+                    }`}
+                  >
+                    {m.time}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {pending && (
+            <div className="flex justify-start">
+              <div className="bg-white border border-gray-200 rounded-2xl rounded-tl-sm px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-1">
+                    {[0, 150, 300].map((delay) => (
+                      <div
+                        key={delay}
+                        className="w-2 h-2 bg-orange-500 rounded-full animate-bounce"
+                        style={{ animationDelay: `${delay}ms` }}
+                      ></div>
+                    ))}
+                  </div>
+                  <span className="text-xs text-gray-500">
+                    Memora is thinking...
                   </span>
                 </div>
-              )}
-              <div className="px-4 py-3">
-                <div
-                  className={`whitespace-pre-wrap text-sm leading-relaxed ${
-                    m.role === "user" ? "text-white" : "text-gray-900"
-                  }`}
-                >
-                  {m.text}
-                </div>
-                <div
-                  className={`text-xs mt-2 ${
-                    m.role === "user" ? "text-orange-100" : "text-gray-400"
-                  }`}
-                >
-                  {m.time}
-                </div>
               </div>
             </div>
-          </div>
-        ))}
-        {pending && (
-          <div className="flex justify-start">
-            <div className="bg-white border border-gray-200 rounded-2xl rounded-tl-sm px-4 py-3">
-              <div className="flex items-center gap-2">
-                <div className="flex gap-1">
-                  <div
-                    className="w-2 h-2 bg-orange-500 rounded-full animate-bounce"
-                    style={{ animationDelay: "0ms" }}
-                  ></div>
-                  <div
-                    className="w-2 h-2 bg-orange-500 rounded-full animate-bounce"
-                    style={{ animationDelay: "150ms" }}
-                  ></div>
-                  <div
-                    className="w-2 h-2 bg-orange-500 rounded-full animate-bounce"
-                    style={{ animationDelay: "300ms" }}
-                  ></div>
-                </div>
-                <span className="text-xs text-gray-500">
-                  Memora is thinking...
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      <div className="sticky bottom-0 left-0 right-0 p-4">
-        <div className="max-w-3xl mx-auto">
+      <div className="sticky bottom-0 left-0 right-0 bg-gray-50 border-t border-gray-200 p-4">
+        <div className="max-w-3xl mx-auto w-full">
           {errorMsg && (
             <div className="mb-3 px-4 py-3 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
