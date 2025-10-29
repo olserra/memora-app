@@ -33,17 +33,10 @@ function normalizeOutput(json: any) {
 function buildPromptFromMemories(memRows: any[], userQuestion: string) {
   if (memRows.length === 0) return userQuestion;
 
-  const chunks = memRows.map(
-    (r: any, i: number) =>
-      `Memory ${i + 1} (id:${r.id}, tags:${
-        Array.isArray(r.tags) ? r.tags.join(",") : r.tags
-      }): ${r.content}`
-  );
-  const context = `\n\nRelevant Memories (ranked by similarity):\n${chunks.join(
-    "\n---\n"
-  )}`;
+  const chunks = memRows.map((r: any) => r.content);
+  const context = `\n\nRelevant memories:\n${chunks.join("\n")}`;
 
-  return `${context}\n\nUser Question: ${userQuestion}\n\nIMPORTANT: Answer ONLY based on memories directly related to the question. Ignore irrelevant memories even if they appear in the list above.`;
+  return `${context}\n\nUser question: ${userQuestion}\n\nAnswer naturally based on the memories above. Don't mention memory IDs, tags, or repeat the question back.`;
 }
 
 async function embedText(text: string): Promise<number[] | undefined> {
@@ -111,38 +104,31 @@ async function callLLM(prompt: string, userName?: string | null) {
         messages: [
           {
             role: "system",
-            content: `You are Memora, a polite, concise AI assistant designed to help users remember personal information.
+            content: `You are Memora, a helpful AI assistant that remembers personal information.
 
-**CRITICAL RULES FOR MEMORY SAVING:**
+**Response Guidelines:**
+- Answer naturally and conversationally
+- Don't mention memory IDs, tags, or technical details
+- Don't repeat or acknowledge what the user just asked
+- Don't use phrases like "yes", "you're asking about", "I can help with that"
+- Be direct and concise
+- When recalling preferences, just state them: "You like X and Y"
 
-Save [MEMORY: fact | tag1, tag2, tag3] for:
+**Memory Saving:**
+Save [MEMORY: fact | tag1, tag2, tag3] ONLY for:
 - Personal facts (name, age, location, job, relationships)
-- Preferences (food, music, hobbies, dislikes)
+- Preferences (food, music, hobbies)
 - Goals, plans, important dates
 - Experiences, stories, past events
-- Skills, knowledge areas, expertise
 
-DO NOT save for:
-- Greetings, pleasantries
-- Questions about time, weather, facts
-- Requests for help or information
-- Meta conversation about the chat itself
-- Generic statements without personal context
+DO NOT save for greetings, questions, or requests for information.
 
-**Examples:**
+Examples:
 User: "I like pasta"
-Assistant: "Nice! [MEMORY: User likes pasta | food, preference, italian]"
+Assistant: "Got it! [MEMORY: User likes pasta | food, preference, italian]"
 
-User: "My girlfriend is Carla"
-Assistant: "That's nice! [MEMORY: User's girlfriend is named Carla | relationship, personal, name]"
-
-User: "What time is it?"
-Assistant: "I don't have access to real-time information, but you can check your device's clock."
-
-User: "How do I cook pasta?"
-Assistant: "Here's how to cook pasta: boil water, add salt, cook 8-10 minutes..."
-
-Save memories ONLY for relevant personal information.`,
+User: "What do I like to drink?"
+Assistant: "You like Pisco sauer and Negroni."`,
           },
           { role: "user", content: prompt },
         ],
@@ -213,41 +199,51 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 401 });
 
     let prompt = message;
-    const listIntentRe =
-      /\bwhat\s+memories\b|\bshow\s+my\s+memories\b|\blist\s+my\s+memories\b|\bmy\s+memories\b/i;
-    const knowAboutMeRes = [
-      /\bwhat.*know.*about.*me\b/i,
-      /\bo que.*sabe.*sobre.*mim\b/i,
-      /\bwhat.*do.*i.*like\b/i,
-      /\bo que.*gosto\b/i,
-      /\bwhat.*my.*favorite\b/i,
-      /\bqual.*meu.*favorito\b/i,
-    ];
+    let retrievedMemories: any[] = [];
 
-    if (
-      listIntentRe.test(message) ||
-      knowAboutMeRes.some((re) => re.test(message))
-    ) {
+    // 1. SEMPRE tentar vector search primeiro
+    const vec = await embedText(message);
+    console.debug("embedText returned length:", vec?.length ?? 0);
+
+    if (vec && vec.length > 0) {
       try {
-        const grouped = await getMemoriesGrouped();
-        const items: any[] = [];
-        for (const cat of Object.keys(grouped)) {
-          for (const it of grouped[cat]) items.push(it);
+        const rows = await getNearestMemoriesForUser(user.id, vec, 10);
+        console.debug(
+          `getNearestMemoriesForUser returned ${rows?.length ?? 0} rows`
+        );
+
+        if (rows && rows.length > 0) {
+          retrievedMemories = rows;
         }
-        if (items.length > 0) {
-          prompt = buildPromptFromMemories(items, message);
-        }
-      } catch (err) {
-        console.debug("Failed to fetch full memories for list intent", err);
+      } catch (error_) {
+        console.debug("Vector search failed", error_);
       }
     }
 
-    const contextualMessage = body.conversationHistory?.length
-      ? `${body.conversationHistory.at(-1)?.content}\n${message}`
-      : message;
+    // 2. Se vector search retornou poucas memórias (<3), buscar todas como fallback
+    if (retrievedMemories.length < 3) {
+      try {
+        const grouped = await getMemoriesGrouped();
+        const allItems: any[] = [];
+        for (const cat of Object.keys(grouped)) {
+          for (const it of grouped[cat]) allItems.push(it);
+        }
+
+        if (allItems.length > 0) {
+          retrievedMemories = allItems;
+          console.debug("Using full memory fallback:", allItems.length);
+        }
+      } catch (err) {
+        console.debug("Full memory fallback failed", err);
+      }
+    }
+
+    // 3. Construir prompt com memórias encontradas
+    if (retrievedMemories.length > 0) {
+      prompt = buildPromptFromMemories(retrievedMemories, message);
+    }
 
     if (prompt === message) {
-      const vec = await embedText(contextualMessage);
       console.debug("embedText returned length:", vec?.length ?? 0);
       if (vec && vec.length > 0) {
         try {
