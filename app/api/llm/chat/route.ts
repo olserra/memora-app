@@ -6,7 +6,6 @@ import {
   getUser,
 } from "@/lib/db/queries";
 import { memories } from "@/lib/db/schema";
-import { and, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 type ChatRequest = { message: string };
@@ -242,12 +241,12 @@ export async function POST(req: NextRequest) {
       console.debug("embedText returned length:", vec?.length ?? 0);
       if (vec && vec.length > 0) {
         try {
-          const rows = await getNearestMemoriesForUser(session.user.id, vec, 5);
+          const rows = await getNearestMemoriesForUser(user.id, vec, 10);
           console.debug(
             `getNearestMemoriesForUser returned ${
               rows?.length ?? 0
-            } rows for user ${session.user.id}`,
-            Array.isArray(rows) ? rows.slice(0, 3) : rows
+            } rows for user ${user.id}`,
+            rows
           );
           if (rows && rows.length > 0) {
             prompt = buildPromptFromMemories(rows, message);
@@ -276,26 +275,6 @@ export async function POST(req: NextRequest) {
           .filter(Boolean)
           .slice(0, 3);
 
-        // Check for exact duplicate content
-        try {
-          const existing = await db
-            .select()
-            .from(memories)
-            .where(
-              and(
-                eq(memories.userId, session.user.id),
-                eq(memories.content, memoryContent)
-              )
-            )
-            .limit(1);
-          if (existing.length > 0) {
-            console.debug("Skipping exact duplicate memory:", memoryContent);
-            continue;
-          }
-        } catch (err) {
-          console.debug("Exact duplicate check failed", err);
-        }
-
         const memVec = await embedText(memoryContent);
         if (memVec && (await checkDuplicate(user.id, memoryContent, memVec))) {
           console.debug("Skipping duplicate memory:", memoryContent);
@@ -308,7 +287,7 @@ export async function POST(req: NextRequest) {
             const inserted = await db
               .insert(memories)
               .values({
-                userId: session.user.id,
+                userId: user.id,
                 content: memoryContent,
                 category: "personal",
                 tags: JSON.stringify(tags),
@@ -317,9 +296,8 @@ export async function POST(req: NextRequest) {
 
             if (inserted[0]) {
               console.debug("Memory saved with ID:", inserted[0].id);
-              const vec = await embedText(memoryContent);
-              if (vec) {
-                const vecStr = "[" + vec.join(",") + "]";
+              if (memVec) {
+                const vecStr = "[" + memVec.join(",") + "]";
                 await client.unsafe(
                   `UPDATE memories SET embedding = $1::vector WHERE id = $2`,
                   [vecStr, inserted[0].id]
