@@ -13,18 +13,18 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function HomePage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    fetch('/api/user')
-      .then(res => res.json())
-      .then(user => {
+    fetch("/api/user")
+      .then((res) => res.json())
+      .then((user) => {
         if (user) {
-          router.push('/memories');
+          router.push("/memories");
         }
       })
       .catch(() => {
