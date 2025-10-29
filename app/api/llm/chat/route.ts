@@ -8,7 +8,10 @@ import {
 import { memories } from "@/lib/db/schema";
 import { NextRequest, NextResponse } from "next/server";
 
-type ChatRequest = { message: string };
+type ChatRequest = {
+  message: string;
+  conversationHistory?: Array<{ role: string; content: string }>;
+};
 
 function normalizeOutput(json: any) {
   let output: string | undefined =
@@ -28,16 +31,19 @@ function normalizeOutput(json: any) {
 }
 
 function buildPromptFromMemories(memRows: any[], userQuestion: string) {
-  let context = "";
-  if (memRows && memRows.length > 0) {
-    const chunks = memRows.map(
-      (r: any, i: number) => `Memory ${i + 1} (id:${r.id}): ${r.content}`
-    );
-    context = `\n\nExisting Memories:\n${chunks.join("\n---\n")}`;
-  }
+  if (memRows.length === 0) return userQuestion;
 
-  const prompt = `${context}\n\nQuestion: ${userQuestion}`;
-  return prompt;
+  const chunks = memRows.map(
+    (r: any, i: number) =>
+      `Memory ${i + 1} (id:${r.id}, tags:${
+        Array.isArray(r.tags) ? r.tags.join(",") : r.tags
+      }): ${r.content}`
+  );
+  const context = `\n\nRelevant Memories (ranked by similarity):\n${chunks.join(
+    "\n---\n"
+  )}`;
+
+  return `${context}\n\nUser Question: ${userQuestion}\n\nIMPORTANT: Answer ONLY based on memories directly related to the question. Ignore irrelevant memories even if they appear in the list above.`;
 }
 
 async function embedText(text: string): Promise<number[] | undefined> {
@@ -236,8 +242,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const contextualMessage = body.conversationHistory?.length
+      ? `${body.conversationHistory.at(-1)?.content}\n${message}`
+      : message;
+
     if (prompt === message) {
-      const vec = await embedText(message);
+      const vec = await embedText(contextualMessage);
       console.debug("embedText returned length:", vec?.length ?? 0);
       if (vec && vec.length > 0) {
         try {
