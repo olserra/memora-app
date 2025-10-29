@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
+  Brain,
   Calendar,
   FileText,
   Grid3X3,
@@ -70,7 +71,14 @@ export default function MemoriesPanel() {
   if (error)
     return <div className="text-red-500 p-4">Failed to load memories</div>;
   if (!data)
-    return <div className="p-4 text-gray-500">Loading memories...</div>;
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center">
+        <div className="text-center">
+          <Brain className="w-8 h-8 text-orange-600 mx-auto mb-4 animate-pulse" />
+          <p className="text-gray-500">Loading your memories...</p>
+        </div>
+      </div>
+    );
 
   return (
     <section className="max-w-7xl mx-auto px-4 py-6 pb-24">

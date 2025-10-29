@@ -4,9 +4,6 @@ import { Check } from "lucide-react";
 import Link from "next/link";
 import { SubmitButton } from "./submit-button";
 
-// Prices are fresh for one hour max
-export const revalidate = 3600;
-
 export default async function PricingPage() {
   const [prices, products] = await Promise.all([
     getStripePrices(),
