@@ -1,3 +1,4 @@
+import Header from "@/components/ui/header";
 import { getUser } from "@/lib/db/queries";
 import { Analytics } from "@vercel/analytics/next";
 import type { Metadata, Viewport } from "next";
@@ -48,6 +49,7 @@ export default function RootLayout({
             },
           }}
         >
+          <Header />
           {children}
         </SWRConfig>
         <Analytics />

@@ -1,8 +1,8 @@
 import { NewUser } from "@/lib/db/schema";
 import { compare, hash } from "bcryptjs";
+import { randomBytes } from "crypto";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import { randomBytes } from "node:crypto";
 import { cache } from "react";
 
 // Ensure we have a non-empty secret to sign tokens with. jose (used by SignJWT)
