@@ -105,10 +105,10 @@ export default function SecurityPage() {
   return (
     <section className="flex-1 p-4 lg:p-8">
       <Card className="mb-8">
-        <CardHeader>
+        <CardHeader className="pt-6">
           <CardTitle>Password</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="py-6">
           <form className="space-y-4" action={passwordAction}>
             <div>
               <Label htmlFor="current-password" className="mb-2">
@@ -182,10 +182,10 @@ export default function SecurityPage() {
       </Card>
 
       <Card className="mb-8">
-        <CardHeader>
+        <CardHeader className="pt-6">
           <CardTitle>Delete Account</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="py-6">
           <p className="text-sm text-gray-500 mb-4">
             Account deletion is non-reversable. Please proceed with caution.
           </p>
@@ -230,10 +230,10 @@ export default function SecurityPage() {
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="pt-6">
           <CardTitle>Recent Activity</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="py-6">
           {logs && logs.length > 0 ? (
             <ul className="space-y-4">
               {logs.map((log) => {
