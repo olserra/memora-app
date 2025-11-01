@@ -2,13 +2,17 @@
 
 import { Button } from "@/components/ui/button";
 import {
+  Activity,
   ArrowRight,
   Brain,
   Check,
   ChevronDown,
+  Heart,
   MessageSquare,
   Shield,
   Star,
+  Target,
+  TrendingUp,
   Zap,
 } from "lucide-react";
 import Link from "next/link";
@@ -294,6 +298,119 @@ export default function HomePage() {
                   </li>
                 ))}
               </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Metrics Section */}
+      <section className="py-20 bg-gradient-to-b from-white to-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Track Your Cognitive Growth
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Science-backed insights that help you understand your learning
+              patterns and mental clarity
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-4">
+                <Target className="w-6 h-6 text-blue-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Focus Consistency
+              </h3>
+              <p className="text-sm text-gray-600">
+                Track your cognitive depth and sustained attention across topics
+              </p>
+            </div>
+
+            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center mb-4">
+                <TrendingUp className="w-6 h-6 text-green-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Knowledge Velocity
+              </h3>
+              <p className="text-sm text-gray-600">
+                Measure your learning speed and knowledge acquisition rate
+              </p>
+            </div>
+
+            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center mb-4">
+                <Heart className="w-6 h-6 text-purple-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Self-Awareness
+              </h3>
+              <p className="text-sm text-gray-600">
+                Monitor reflection patterns and emotional-cognitive balance
+              </p>
+            </div>
+
+            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center mb-4">
+                <Activity className="w-6 h-6 text-orange-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Activity Rhythm
+              </h3>
+              <p className="text-sm text-gray-600">
+                Understand your engagement patterns and cognitive consistency
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-3xl p-8 md:p-12 text-white">
+            <div className="grid md:grid-cols-2 gap-8 items-center">
+              <div>
+                <h3 className="text-2xl md:text-3xl font-bold mb-4">
+                  Choose Your Journey
+                </h3>
+                <p className="text-orange-50 mb-6">
+                  Whether you're a learner, reflector, or creator, Memora adapts
+                  to your cognitive style with personalized insights and
+                  tracking.
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <span className="px-4 py-2 bg-white/20 rounded-full text-sm font-medium">
+                    🎓 Learner
+                  </span>
+                  <span className="px-4 py-2 bg-white/20 rounded-full text-sm font-medium">
+                    🪞 Reflector
+                  </span>
+                  <span className="px-4 py-2 bg-white/20 rounded-full text-sm font-medium">
+                    ✨ Creator
+                  </span>
+                </div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                    <span className="text-sm">
+                      Real-time cognitive analytics
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                    <span className="text-sm">
+                      Personalized insight generation
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                    <span className="text-sm">
+                      Long-term pattern recognition
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
